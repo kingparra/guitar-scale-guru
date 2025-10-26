@@ -1,7 +1,7 @@
 import React from 'react';
 import Card from '../common/Card';
 import SectionHeader from '../common/SectionHeader';
-import { renderTab } from '../../utils/markdownUtils';
+import { renderStructuredTab } from '../../utils/markdownUtils';
 import { MusicNoteIcon, FireIcon, BookOpenIcon, SparklesIcon, GlobeIcon, GearIcon } from '../common/Icons';
 import { COLORS } from '../../constants';
 import type { ScaleDetails } from '../../types';
@@ -40,7 +40,7 @@ const PracticeSection: React.FC<PracticeSectionProps> = ({ scaleDetails }) => {
                                 <div key={p.name} className="mt-4">
                                     <p className="font-semibold text-lg">{p.name}</p>
                                     <p className="text-sm italic mb-2" style={{ color: COLORS.textSecondary }}>{p.analysis}</p>
-                                    {renderTab(p.tab)}
+                                    {renderStructuredTab(p.tab)}
                                     {p.harmonicFunctionAnalysis && (
                                         <div className="mt-3 bg-black/20 p-3 rounded-md border border-purple-400/20">
                                             <p className="font-semibold text-purple-300">Harmonic Function:</p>
@@ -67,7 +67,7 @@ const PracticeSection: React.FC<PracticeSectionProps> = ({ scaleDetails }) => {
                                     </div>
                                     <a href={l.sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-4 flex-shrink-0 bg-fuchsia-500/80 hover:bg-fuchsia-500 text-white font-bold py-1 px-3 rounded-md transition-colors">View Source</a>
                                 </div>
-                                {renderTab(l.tab)}
+                                {renderStructuredTab(l.tab)}
                             </div>
                         ))}
                     </div>
@@ -82,7 +82,7 @@ const PracticeSection: React.FC<PracticeSectionProps> = ({ scaleDetails }) => {
                              <div key={h.name}>
                                 <p className="font-semibold text-lg">{h.name}</p>
                                 <p className="text-sm italic mb-2" style={{ color: COLORS.textSecondary }}>{h.description}</p>
-                                {renderTab(h.tab)}
+                                {renderStructuredTab(h.tab)}
                             </div>
                         ))}
                     </div>
@@ -97,7 +97,7 @@ const PracticeSection: React.FC<PracticeSectionProps> = ({ scaleDetails }) => {
                              <div key={e.name}>
                                 <p className="font-semibold text-lg">{e.name}</p>
                                 <p className="text-sm italic mb-2" style={{ color: COLORS.textSecondary }}>{e.description}</p>
-                                {renderTab(e.tab)}
+                                {renderStructuredTab(e.tab)}
                             </div>
                         ))}
                     </div>

@@ -1,13 +1,55 @@
 import React from 'react';
+import type { StructuredTab } from '../types';
+import { TUNING } from '../constants';
 
-export const renderTab = (tab: string) => (
-    <pre
-      className="bg-[#0D0B1A]/70 text-gray-300 p-4 rounded-md overflow-x-auto text-base font-mono whitespace-pre leading-relaxed border border-purple-400/20"
-      style={{ fontFamily: "'Roboto Mono', monospace" }}
-    >
-        {tab}
-    </pre>
-);
+export const renderStructuredTab = (tab: StructuredTab) => {
+    if (!tab || !tab.columns || tab.columns.length === 0) {
+        return null;
+    }
+
+    // Initialize string lines with tuning, padded for alignment
+    const strings = Array.from({ length: 7 }, (_, i) => TUNING[i].padEnd(2, ' ') + '|');
+
+    for (const column of tab.columns) {
+        // Handle bar lines
+        const isBarLine = column.length > 0 && column.every(note => note.fret === '|');
+        if (isBarLine) {
+            strings.forEach((_, i) => strings[i] += '|');
+            continue;
+        }
+
+        const columnFrets = Array(7).fill('-');
+        let maxWidth = 1;
+
+        for (const note of column) {
+            if (note.string >= 0 && note.string < 7) {
+                columnFrets[note.string] = note.fret;
+                if (note.fret.length > maxWidth) {
+                    maxWidth = note.fret.length;
+                }
+            }
+        }
+
+        for (let i = 0; i < 7; i++) {
+            const fret = columnFrets[i];
+            const padding = '-'.repeat(maxWidth - fret.length);
+            strings[i] += `${padding}${fret}-`;
+        }
+    }
+    
+    // Add final bar line
+    strings.forEach((_, i) => strings[i] += '|');
+
+    return (
+        <pre
+            className="bg-[#0D0B1A]/70 text-gray-300 p-4 rounded-md overflow-x-auto text-base font-mono whitespace-pre leading-relaxed border border-purple-400/20"
+            style={{ fontFamily: "'Roboto Mono', monospace" }}
+        >
+            {strings.join('\n')}
+        </pre>
+    );
+};
+
 
 export const renderMarkdownTable = (markdownString: string) => {
     if (!markdownString || !markdownString.includes('|')) {

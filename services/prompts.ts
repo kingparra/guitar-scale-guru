@@ -15,7 +15,7 @@ Return a single, valid JSON array that strictly adheres to the provided schema. 
 `;
 
 export const getScaleMaterialsPrompt = (rootNote: string, scaleName: string) => `
-### **Master Prompt for Generating Guitar Scale Materials (Version 4.3)**
+### **Master Prompt for Generating Guitar Scale Materials (Version 5.1 - Diagram Constraints)**
 
 **Request:** Generate a complete set of learning materials for the **${rootNote} ${scaleName}** scale on a seven-string guitar (tuned B E A D G B E, low to high).
 
@@ -27,71 +27,79 @@ export const getScaleMaterialsPrompt = (rootNote: string, scaleName: string) => 
 Your primary goal is to deliver musically useful, instantly readable guitar scale materials for a seven-string guitar. The content should be targeted at an intermediate to advanced player who wants both deep theoretical understanding and practical, challenging application material.
 
 ---
-#### **2. JSON Content & Structure Requirements**
-A new scale request **must** return a single JSON object containing all of the following top-level keys: "overview", "listeningGuide", "youtubeTutorials", "creativeApplication", "jamTracks", "toneAndGear", "keyChords", "licks", "advancedHarmonization", "etudes", "modeSpotlight", "diagramData".
+#### **2. Structured Tablature (\`StructuredTab\`) Format**
+**CRITICAL:** All tablature MUST be provided in the following structured JSON format. **DO NOT** generate pre-formatted text tabs.
+
+\`\`\`json
+{
+  "tab": {
+    "columns": [
+      [ { "string": 5, "fret": "5" } ],
+      [ { "string": 5, "fret": "7" } ],
+      [ { "string": 5, "fret": "8" } ],
+      [ { "string": 5, "fret": "7h8p7" } ],
+      [ { "string": 4, "fret": "5" } ],
+      [ { "string": 0, "fret": "|" }, { "string": 1, "fret": "|" }, { "string": 2, "fret": "|" }, { "string": 3, "fret": "|" }, { "string": 4, "fret": "|" }, { "string": 5, "fret": "|" }, { "string": 6, "fret": "|" } ],
+      [ { "string": 3, "fret": "12b14" } ],
+      [ { "string": 2, "fret": "~10~" } ]
+    ]
+  }
+}
+\`\`\`
+*   **columns**: An array of columns. Each column represents a moment in time.
+*   **Column**: An array of \`TabNote\` objects played simultaneously.
+*   **TabNote**: An object with \`"string"\` (0=high E, 6=low B) and \`"fret"\`.
+*   **fret (string)**: The fret number or technique.
+    *   **Techniques**: MUST be included where musically appropriate. Use standard notation: 'h' (hammer-on), 'p' (pull-off), '/' (slide up), '\\' (slide down), 'b' (bend), 'r' (release), '~' (vibrato).
+    *   **Bar Lines**: Represent a bar line with a column where ALL 7 strings have a \`TabNote\` with \`fret: "|" \`.
+    *   **Rests**: A column with an empty array \`[]\` represents a rest.
+
+---
+#### **3. JSON Content & Structure Requirements**
+A new scale request **must** return a single JSON object containing all of the following top-level keys.
 
 1.  **overview**:
-    *   **title**: The full name, e.g., "${rootNote} ${scaleName}".
-    *   **character**: A detailed, engaging description of the scale's emotional character (mood, feel, common descriptors).
-    *   **theory**: Explain the theoretical function and history, focusing on the hallmark intervals and purpose.
-    *   **usage**: Describe its common usage in various modern and classic genres.
-    *   **degreeExplanation**: A string containing a simple markdown-style table explaining each scale degree for **${rootNote} ${scaleName}**. Columns: "Degree", "Note", "Function/Character". Example: "| Degree | Note | Function/Character |\\n|---|---|---|\\n| R | E | The Root/Tonic. The 'home' note. |"
+    *   **degreeExplanation**: A string containing a simple markdown-style table explaining each scale degree for **${rootNote} ${scaleName}**. Columns: "Degree", "Note", "Function/Character".
 
 2.  **listeningGuide:** (Array of 3-4 Song objects)
-    *   CRITICAL: Select "deeper cuts" or tracks from technical, modern, or genre-specific artists that truly showcase the scale's unique character.
-    *   **Avoid extremely popular, over-cited examples** (e.g., avoid 'Stairway to Heaven' for A minor, or 'Crazy Train' for F# minor). Instead, focus on songs where the scale is a defining characteristic of a key riff, solo, or melody.
-    *   Consider examples from progressive metal, jazz fusion, film scores, or technical death metal where appropriate for the scale.
-    *   **spotifyLink**: A valid Spotify **search URL**: \`https://open.spotify.com/search/SONG_TITLE%20ARTIST\`.
+    *   CRITICAL: Select "deeper cuts" or tracks from technical, modern, or genre-specific artists.
+    *   **Avoid extremely popular, over-cited examples**.
+    *   **spotifyLink**: A valid Spotify **search URL**.
 
-3.  **youtubeTutorials:** (Array of 2-3 Tutorial objects)
-    *   Select high-quality videos on practical application or theory.
-    *   **youtubeLink**: A valid YouTube **search URL**: \`https://www.youtube.com/results?search_query=TUTORIAL_TITLE\`.
-
-4.  **creativeApplication:** (Array of 2-3 CreativeVideo objects)
-    *   Find YouTube videos showcasing the scale in a real musical context (improvisation, composition, song breakdown).
+3.  **youtubeTutorials / creativeApplication / jamTracks:** (Arrays of 2-3 objects each)
+    *   Select high-quality videos.
     *   **youtubeLink**: A valid YouTube **search URL**.
 
-5.  **jamTracks:** (Array of 2-3 JamTrack objects)
-    *   Find high-quality jam tracks on YouTube in the key of **${rootNote}** that fit the scale's mood.
-    *   **title**: e.g., "Sad Ballad Backing Track in D Minor".
-    *   **youtubeLink**: A valid YouTube **search URL**.
+4.  **toneAndGear:**
+    *   Provide tips for amp settings, effects, and pickups.
+    *   List famous artists associated with the sound.
 
-6.  **toneAndGear:**
-    *   **suggestions**: (Array of ToneSuggestion objects) Provide tips for amp settings, effects (delay, reverb, overdrive), and pickup selection.
-    *   **famousArtists**: A brief sentence listing famous guitarists associated with the scale's sound and their typical gear.
-
-7.  **keyChords:**
+5.  **keyChords:**
     *   **diatonicQualities**: Single-line reference (e.g., \`i-ii°-III+-iv-V-VI-vii°\`).
     *   **progressions**: (Array of 2 ChordProgression objects) For each progression:
-        *   Provide the TAB and a brief analysis.
-        *   **harmonicFunctionAnalysis**: A brief (1-2 sentence) explanation of the progression's harmonic function, describing the role of each chord (e.g., tonic, pre-dominant, dominant) and the overall tension and release.
+        *   **tab**: Must be a \`StructuredTab\` object. Can be used for arpeggiated patterns or chord strums.
+        *   **harmonicFunctionAnalysis**: A brief explanation of the progression's harmonic function (e.g., tonic, pre-dominant, dominant).
 
-8.  **licks:** (Array of 1-2 Lick objects)
-    *   Research a classic, idiomatic guitar lick using the scale.
-    *   **tab**: Provide the guitar TAB.
-    *   **sourceUrl**: A valid, direct URL to the source page or video.
+6.  **licks:** (Array of 1-2 Lick objects)
+    *   Create musically interesting licks that **demonstrate a key characteristic of the scale**. For example, for Phrygian Dominant, create a lick highlighting the b2 to R resolution.
+    *   **tab**: Must be a \`StructuredTab\` object, incorporating techniques like bends, slides, and vibrato.
 
-9. **advancedHarmonization:** (Array of 1-2 HarmonizationExercise objects)
-    *   CRITICAL: These MUST be comprehensive exercises that cover a significant portion of the fretboard. For example, a TAB of diatonic triads played in sequence, ascending the neck and connecting at least two different fretboard positions.
-    *   The exercise **must span a minimum of 12 frets** (e.g., from fret 2 to fret 14).
-    *   **Do NOT provide a simple, single-position exercise** confined to a 5-fret box. It must demonstrate practical position shifting.
+7. **advancedHarmonization:** (Array of 1-2 HarmonizationExercise objects)
+    *   Create comprehensive exercises that cover a significant portion of the fretboard, **spanning a minimum of 12 frets** and connecting multiple positions.
+    *   **tab**: Must be a \`StructuredTab\` object.
 
-10. **etudes:** (Array of 1-2 Etude objects)
-    *   CRITICAL: These MUST be comprehensive musical pieces that are both technically and musically valuable.
-    *   A technical etude should explore a pattern (like sequential 4ths or arpeggios) across **multiple octaves and fretboard positions**.
-    *   A musical etude should be a titled "mini-composition" (at least 4 bars) that **travels across different strings and fretboard regions**, telling a small musical story and demonstrating how to connect scale shapes fluidly.
-    *   **Avoid simple, repetitive patterns that stay in one place.** The goal is to teach movement across the entire neck.
+8. **etudes:** (Array of 1-2 Etude objects)
+    *   Create comprehensive musical pieces (at least 4 bars) that travel across different strings and fretboard regions.
+    *   **tab**: Must be a \`StructuredTab\` object with clear bar lines.
 
-11. **modeSpotlight:**
-    *   **name**: Spotlight the most useful mode (e.g., "5th Mode: Phrygian Dominant").
-    *   **explanation**, **soundAndApplication**.
+9. **modeSpotlight:**
+    *   Spotlight the most useful mode of the scale.
 
-12. **diagramData:**
-    *   **tonicChordDegrees**: e.g., ["R", "b3", "5"].
-    *   **characteristicDegrees**: e.g., ["b6", "7"].
-    *   **notesOnFretboard**: Array of ALL notes of the scale from fret 0 to 25 on all 7 strings.
-    *   **fingering**: Object with **pos1**, **pos2**, **pos3**. Each is an **ARRAY of objects** with "key" ("string_fret") and "finger" ("1"-"4"). Each position **must be confined to a playable 4-5 fret span**.
-    *   **diagonalRun**: An array of objects representing a single, continuous, playable path of notes from the lowest possible note of the scale to the highest. This should prioritize **three-note-per-string** patterns for a fluid, modern feel. Each note in the array must include its string, fret, noteName, degree, and the recommended finger ('1'-'4').
+10. **diagramData:**
+    *   **tonicChordDegrees**, **characteristicDegrees**.
+    *   **notesOnFretboard**: CRITICAL: This array **must** include every single occurrence of every scale note on all seven strings, from the open string (fret 0) up to and including the 24th fret.
+    *   **fingering**: CRITICAL: Each position (\`pos1\`, \`pos2\`, \`pos3\`) **must be confined to a playable 4-5 fret span**. Do not include notes outside this small window for a single position. These should represent standard, ergonomic "box" patterns.
+    *   **diagonalRun**: A continuous, playable path from lowest to highest note, prioritizing **three-note-per-string** patterns.
 
 ---
 **CRITICAL INSTRUCTION:** Generate the entire response as a single, complete JSON object. Do not include any introductory text, backticks, or markdown formatting around the JSON.

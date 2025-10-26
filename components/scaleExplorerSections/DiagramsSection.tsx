@@ -2,6 +2,7 @@ import React from 'react';
 import FretboardDiagram from '../FretboardDiagram';
 import type { ScaleDetails } from '../../types';
 import { FontSizeKey, FONT_SIZES } from '../../App';
+import { NUM_FRETS } from '../../constants';
 
 interface DiagramsSectionProps {
     title: string;
@@ -12,7 +13,7 @@ interface DiagramsSectionProps {
 // Helper to find the lowest fret in a fingering map for a dynamic fret range.
 const calculatePlayableFretRange = (fingeringMap: ScaleDetails['diagramData']['fingering']['pos1']): [number, number] => {
     if (!fingeringMap || fingeringMap.length === 0) {
-        return [0, 5]; // Default fallback
+        return [1, 5]; // Default fallback, starting at 1 for position diagrams
     }
     // Extract fret numbers from 'string_fret' key
     const frets = fingeringMap.map(item => parseInt(item.key.split('_')[1], 10));
@@ -35,7 +36,7 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = ({ title, diagramData, f
             <FretboardDiagram
                 title={`${title}: Full Neck`}
                 scaleData={diagramData}
-                fretRange={[0, 25]}
+                fretRange={[0, NUM_FRETS]}
                 fontScale={fontScaleValue * 0.9}
             />
             
@@ -43,7 +44,7 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = ({ title, diagramData, f
                 <FretboardDiagram
                     title={`${title}: Ascending Diagonal Run`}
                     scaleData={diagramData}
-                    fretRange={[0, 25]}
+                    fretRange={[0, NUM_FRETS]}
                     diagonalRun={diagramData.diagonalRun}
                     fontScale={fontScaleValue * 0.9}
                 />

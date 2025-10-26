@@ -1,7 +1,7 @@
 
 export const TUNING = ['E', 'B', 'G', 'D', 'A', 'E', 'B']; // High to low
 export const NUM_STRINGS = 7;
-export const NUM_FRETS = 25;
+export const NUM_FRETS = 24; // Standard 24-fret guitar has frets 0-24.
 
 export const FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 

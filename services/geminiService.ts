@@ -67,6 +67,28 @@ export const analyzeMusicNotationImage = async (imageData: string, mimeType: str
     }
 };
 
+// Reusable schema for structured tablature data
+const structuredTabSchema = {
+    type: Type.OBJECT,
+    properties: {
+        columns: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        string: { type: Type.NUMBER, description: "String number (0=high E, 6=low B)" },
+                        fret: { type: Type.STRING, description: "Fret number as a string, can include techniques (e.g., '5', '12', '5h7', '|')" }
+                    },
+                    required: ['string', 'fret']
+                }
+            }
+        }
+    },
+    required: ['columns']
+};
+
 const scaleDetailsSchema = {
     type: Type.OBJECT,
     properties: {
@@ -158,7 +180,7 @@ const scaleDetailsSchema = {
                         properties: {
                             name: { type: Type.STRING },
                             analysis: { type: Type.STRING },
-                            tab: { type: Type.STRING },
+                            tab: structuredTabSchema,
                             harmonicFunctionAnalysis: { type: Type.STRING }
                         },
                         required: ['name', 'analysis', 'tab', 'harmonicFunctionAnalysis']
@@ -174,7 +196,7 @@ const scaleDetailsSchema = {
                 properties: {
                     name: { type: Type.STRING },
                     description: { type: Type.STRING },
-                    tab: { type: Type.STRING },
+                    tab: structuredTabSchema,
                     sourceUrl: { type: Type.STRING }
                 },
                 required: ['name', 'description', 'tab', 'sourceUrl']
@@ -187,7 +209,7 @@ const scaleDetailsSchema = {
                 properties: {
                     name: { type: Type.STRING },
                     description: { type: Type.STRING },
-                    tab: { type: Type.STRING }
+                    tab: structuredTabSchema
                 },
                 required: ['name', 'description', 'tab']
             }
@@ -199,7 +221,7 @@ const scaleDetailsSchema = {
                 properties: {
                     name: { type: Type.STRING },
                     description: { type: Type.STRING },
-                    tab: { type: Type.STRING }
+                    tab: structuredTabSchema
                 },
                 required: ['name', 'description', 'tab']
             }

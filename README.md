@@ -21,6 +21,7 @@ The `src` directory is organized as follows:
     -   `useScaleGenerator.ts`: Manages state and API calls for generating scale materials.
     -   `useNotationAnalyzer.ts`: Manages state and logic for the file upload, processing, and analysis feature.
     -   `usePdfGenerator.ts`: Encapsulates the complex logic for generating a PDF from the application's content.
+    -   `useFretboardLayout.ts`: A dedicated hook to handle all complex coordinate and layout calculations for the fretboard diagrams.
 
 -   **/services**: Modules responsible for external communication, primarily with the Gemini API.
     -   `geminiService.ts`: Contains the functions that make the API calls.
@@ -44,3 +45,5 @@ The `src` directory is organized as follows:
 3.  **Service Layer Abstraction:** All interactions with the Gemini API are handled within the `services` directory. This isolates external dependencies, making it easy to manage, mock for testing, or even swap out the backend service in the future without affecting the rest of the application.
 
 4.  **Declarative PDF Generation:** Instead of manually building a DOM tree for PDF generation (an imperative approach), we use a hidden React component (`PdfDocument.tsx`) that declaratively renders the content. A ref is used to capture this element for processing with `html2canvas`, which is a much cleaner, more idiomatic React pattern.
+
+5.  **Diagram Rendering Logic:** The complex `FretboardDiagram` component has been refactored for clarity and correctness. All layout and coordinate calculation logic has been extracted into a dedicated custom hook, `useFretboardLayout`. The rendering of individual notes is now handled by a focused `FretboardNote` sub-component. This separation of concerns makes the diagram system easier to maintain, test, and debug.
