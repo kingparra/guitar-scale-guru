@@ -31,6 +31,7 @@ export interface ChordProgression {
     name: string;
     analysis: string;
     tab: string;
+    harmonicFunctionAnalysis: string;
 }
 
 export interface Lick {
@@ -65,6 +66,8 @@ export interface DiagramNote {
     degree: string;
 }
 
+export type PathDiagramNote = DiagramNote & { finger: string };
+
 export type FingeringEntry = { key: string; finger: string; };
 export type FingeringMap = FingeringEntry[];
 
@@ -77,6 +80,7 @@ export interface DiagramData {
         pos2: FingeringMap;
         pos3: FingeringMap;
     };
+    diagonalRun: PathDiagramNote[];
 }
 
 export interface ScaleDetails {
@@ -111,5 +115,13 @@ export interface FretboardDiagramProps {
     scaleData: DiagramData;
     fretRange: [number, number];
     fingeringMap?: FingeringMap;
+    diagonalRun?: PathDiagramNote[];
     fontScale: number;
+}
+
+export interface SongAnalysisResult {
+    rootNote: string;
+    scaleName: string;
+    analysis: string;
+    suitability: string;
 }
