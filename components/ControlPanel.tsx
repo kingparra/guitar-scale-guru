@@ -1,5 +1,7 @@
+
 import React from 'react';
-import { FONT_SIZES, FontSizeKey } from '../App';
+import { FONT_SIZES } from '../constants';
+import type { FontSizeKey } from '../types';
 
 interface ControlPanelProps {
     rootNote: string;

@@ -1,9 +1,11 @@
 // Fix: Import Jest globals explicitly to resolve errors about missing test functions.
 import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 
-import { generateScaleMaterials, analyzeMusicNotationImage } from './geminiService';
+// Fix: Import generateCoreMaterials instead of generateScaleMaterials.
+import { generateCoreMaterials, analyzeMusicNotationImage } from './geminiService';
 import { GoogleGenAI } from "@google/genai";
-import { notationAnalysisPrompt, getScaleMaterialsPrompt } from './prompts';
+// Fix: Import getCoreMaterialsPrompt instead of getScaleMaterialsPrompt.
+import { notationAnalysisPrompt, getCoreMaterialsPrompt } from './prompts';
 
 // Mock the entire @google/genai module
 jest.mock('@google/genai', () => ({
@@ -18,13 +20,15 @@ jest.mock('@google/genai', () => ({
 // Mock the prompts module
 jest.mock('./prompts', () => ({
     notationAnalysisPrompt: 'mocked-notation-prompt',
-    getScaleMaterialsPrompt: jest.fn().mockReturnValue('mocked-scale-prompt'),
+    // Fix: Mock getCoreMaterialsPrompt.
+    getCoreMaterialsPrompt: jest.fn().mockReturnValue('mocked-scale-prompt'),
 }));
 
 // Create typed mocks
 const mockGenerateContent = jest.fn();
 // Fix: Cast to 'any' because Jest's global types are not being recognized.
-const mockGetScaleMaterialsPrompt = getScaleMaterialsPrompt as any;
+// Fix: Use getCoreMaterialsPrompt for the mock variable.
+const mockGetCoreMaterialsPrompt = getCoreMaterialsPrompt as any;
 
 // Reset mocks before each test
 beforeEach(() => {
@@ -35,17 +39,21 @@ beforeEach(() => {
         },
     }));
     mockGenerateContent.mockClear();
-    mockGetScaleMaterialsPrompt.mockClear();
+    // Fix: Clear the correct prompt mock.
+    mockGetCoreMaterialsPrompt.mockClear();
 });
 
 describe('geminiService', () => {
-    describe('generateScaleMaterials', () => {
+    // Fix: Update describe block to test generateCoreMaterials.
+    describe('generateCoreMaterials', () => {
         it('should call the prompt generator and the Gemini API with the correct arguments', async () => {
             mockGenerateContent.mockResolvedValue({ text: JSON.stringify({}) });
 
-            await generateScaleMaterials('E', 'Harmonic Minor');
+            // Fix: Call generateCoreMaterials.
+            await generateCoreMaterials('E', 'Harmonic Minor');
 
-            expect(mockGetScaleMaterialsPrompt).toHaveBeenCalledWith('E', 'Harmonic Minor');
+            // Fix: Expect the correct prompt mock to be called.
+            expect(mockGetCoreMaterialsPrompt).toHaveBeenCalledWith('E', 'Harmonic Minor');
             expect(mockGenerateContent).toHaveBeenCalledTimes(1);
             
             const callArgs = mockGenerateContent.mock.calls[0][0];
@@ -58,13 +66,15 @@ describe('geminiService', () => {
             const mockResponse = { overview: { title: 'C# Lydian' } };
             mockGenerateContent.mockResolvedValue({ text: JSON.stringify(mockResponse) });
 
-            const result = await generateScaleMaterials('C#', 'Lydian');
+            // Fix: Call generateCoreMaterials.
+            const result = await generateCoreMaterials('C#', 'Lydian');
             expect(result).toEqual(mockResponse);
         });
 
         it('should throw an error if the API call fails', async () => {
             mockGenerateContent.mockRejectedValue(new Error('API Error'));
-            await expect(generateScaleMaterials('A', 'Major')).rejects.toThrow('Error generating scale materials.');
+            // Fix: Call generateCoreMaterials and expect the correct error message.
+            await expect(generateCoreMaterials('A', 'Major')).rejects.toThrow('Error generating core materials.');
         });
     });
 

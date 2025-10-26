@@ -1,3 +1,4 @@
+
 export interface Song {
   title: string;
   artist: string;
@@ -39,10 +40,23 @@ export interface StructuredTab {
     columns: TabColumn[];
 }
 
+// New types for visual chord diagrams
+export interface ChordDiagramData {
+    frets: (number | string)[]; // Array of 6 numbers (frets) or 'x' (muted) or 0 (open), from low E to high E
+    fingers: (number | string)[]; // Array of 6 numbers (fingers) or 0/''
+    baseFret: number; // The fret number to display at the top of the diagram
+    barres: { fromString: number; toString: number; fret: number }[];
+}
+
+export interface Chord {
+    name: string;
+    diagramData: ChordDiagramData;
+}
+
 export interface ChordProgression {
     name: string;
     analysis: string;
-    tab: StructuredTab;
+    chords: Chord[];
     harmonicFunctionAnalysis: string;
 }
 
@@ -71,11 +85,15 @@ export interface ModeInfo {
     soundAndApplication: string;
 }
 
+/**
+ * Represents a single note to be displayed on a fretboard diagram.
+ * For chords, `noteName` and `degree` may be undefined.
+ */
 export interface DiagramNote {
     string: number;
     fret: number;
-    noteName: string;
-    degree: string;
+    noteName?: string;
+    degree?: string;
 }
 
 export type PathDiagramNote = DiagramNote & { finger: string };
@@ -95,31 +113,32 @@ export interface DiagramData {
     diagonalRun: PathDiagramNote[];
 }
 
+// Updated ScaleDetails to support progressive loading by making all properties optional.
 export interface ScaleDetails {
-    overview: {
+    overview?: {
         title: string;
         character: string;
         theory: string;
         usage: string;
         degreeExplanation: string;
     };
-    listeningGuide: Song[];
-    youtubeTutorials: Tutorial[];
-    creativeApplication: CreativeVideo[];
-    jamTracks: JamTrack[];
-    toneAndGear: {
+    listeningGuide?: Song[];
+    youtubeTutorials?: Tutorial[];
+    creativeApplication?: CreativeVideo[];
+    jamTracks?: JamTrack[];
+    toneAndGear?: {
         suggestions: ToneSuggestion[];
         famousArtists: string;
     };
-    keyChords: {
+    keyChords?: {
         diatonicQualities: string;
         progressions: ChordProgression[];
     };
-    licks: Lick[];
-    advancedHarmonization: HarmonizationExercise[];
-    etudes: Etude[];
-    modeSpotlight: ModeInfo;
-    diagramData: DiagramData;
+    licks?: Lick[];
+    advancedHarmonization?: HarmonizationExercise[];
+    etudes?: Etude[];
+    modeSpotlight?: ModeInfo;
+    diagramData?: DiagramData;
 }
 
 export interface FretboardDiagramProps {
@@ -152,3 +171,5 @@ export interface SongAnalysisResult {
     analysis: string;
     suitability: string;
 }
+
+export type FontSizeKey = 'S' | 'M' | 'L';

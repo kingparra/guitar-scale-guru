@@ -39,22 +39,25 @@ const FretboardNote: React.FC<FretboardNoteProps> = React.memo(({
                 textAnchor="middle"
                 fontWeight="bold"
             >
-                {sequenceNumber ? sequenceNumber : noteName}
+                {/* For chord diagrams, noteName will be undefined. SequenceNumber takes precedence for runs. */}
+                {sequenceNumber ? sequenceNumber : (noteName ?? '')}
             </text>
 
-            {/* Degree Text (top right) */}
-            <text
-                x={x + (22 * fontScale)}
-                y={y - (22 * fontScale)}
-                fontSize={degreeFontSize * fontScale}
-                fill={COLORS.textPrimary}
-                textAnchor="middle"
-                fontWeight="bold"
-            >
-                {degree}
-            </text>
+            {/* Degree Text (top right) - only render if degree is provided */}
+            {degree && (
+                <text
+                    x={x + (22 * fontScale)}
+                    y={y - (22 * fontScale)}
+                    fontSize={degreeFontSize * fontScale}
+                    fill={COLORS.textPrimary}
+                    textAnchor="middle"
+                    fontWeight="bold"
+                >
+                    {degree}
+                </text>
+            )}
 
-            {/* Finger Number (top left) - always just text now */}
+            {/* Finger Number (top left) */}
             {finger && (
                 <text
                     x={x - (20 * fontScale)}

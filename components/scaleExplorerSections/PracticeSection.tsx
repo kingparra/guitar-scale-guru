@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import Card from '../common/Card';
 import SectionHeader from '../common/SectionHeader';
@@ -5,6 +7,7 @@ import { renderStructuredTab } from '../../utils/markdownUtils';
 import { MusicNoteIcon, FireIcon, BookOpenIcon, SparklesIcon, GlobeIcon, GearIcon } from '../common/Icons';
 import { COLORS } from '../../constants';
 import type { ScaleDetails } from '../../types';
+import ChordFretboardDiagram from '../ChordFretboardDiagram';
 
 interface PracticeSectionProps {
     scaleDetails: ScaleDetails;
@@ -39,13 +42,19 @@ const PracticeSection: React.FC<PracticeSectionProps> = ({ scaleDetails }) => {
                             {keyChords.progressions.map(p => (
                                 <div key={p.name} className="mt-4">
                                     <p className="font-semibold text-lg">{p.name}</p>
-                                    <p className="text-sm italic mb-2" style={{ color: COLORS.textSecondary }}>{p.analysis}</p>
-                                    {renderStructuredTab(p.tab)}
+                                    <p className="text-base mb-2" style={{ color: COLORS.textSecondary }}>{p.analysis}</p>
+                                    
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start p-2 rounded-md">
+                                        {p.chords.map((chord, index) => (
+                                            <ChordFretboardDiagram key={`${chord.name}-${index}`} chord={chord} />
+                                        ))}
+                                    </div>
+
                                     {p.harmonicFunctionAnalysis && (
-                                        <div className="mt-3 bg-black/20 p-3 rounded-md border border-purple-400/20">
-                                            <p className="font-semibold text-purple-300">Harmonic Function:</p>
-                                            <p className="text-sm" style={{ color: COLORS.textSecondary }}>{p.harmonicFunctionAnalysis}</p>
-                                        </div>
+                                        <blockquote className="mt-4 bg-black/20 p-4 rounded-md border-l-4 border-purple-400/50 text-base">
+                                            <p className="font-semibold text-purple-300 mb-1">Harmonic Function</p>
+                                            <p style={{ color: COLORS.textPrimary }}>{p.harmonicFunctionAnalysis}</p>
+                                        </blockquote>
                                     )}
                                 </div>
                             ))}

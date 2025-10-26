@@ -1,13 +1,13 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { ScaleDetails, SongAnalysisResult } from '../types';
-import { notationAnalysisPrompt, getScaleMaterialsPrompt } from './prompts';
+import { getCoreMaterialsPrompt, getResourcesPrompt, getPracticePrompt, notationAnalysisPrompt } from './prompts';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const scaleCache = new Map<string, ScaleDetails>();
 
 const songAnalysisSchema = {
     type: Type.ARRAY,
@@ -49,13 +49,10 @@ export const analyzeMusicNotationImage = async (imageData: string, mimeType: str
         });
 
         const jsonString = response.text;
-        const parsedData = JSON.parse(jsonString);
-
-        return parsedData as SongAnalysisResult[];
+        return JSON.parse(jsonString) as SongAnalysisResult[];
 
     } catch (e: any) {
         let errorMessage = `Error analyzing notation image.`;
-        // Attempt to parse a structured error from Gemini if available
         try {
            const errorObj = JSON.parse(e.message);
            errorMessage += `\n${JSON.stringify(errorObj, null, 2)}`;
@@ -89,7 +86,40 @@ const structuredTabSchema = {
     required: ['columns']
 };
 
-const scaleDetailsSchema = {
+const chordDiagramDataSchema = {
+    type: Type.OBJECT,
+    properties: {
+        // Fix: Replaced invalid `Type.ANY` with `Type.STRING` which can represent numbers or characters like 'x'.
+        frets: { type: Type.ARRAY, items: { type: Type.STRING } },
+        fingers: { type: Type.ARRAY, items: { type: Type.STRING } },
+        baseFret: { type: Type.NUMBER },
+        barres: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    fromString: { type: Type.NUMBER },
+                    toString: { type: Type.NUMBER },
+                    fret: { type: Type.NUMBER }
+                },
+                required: ['fromString', 'toString', 'fret']
+            }
+        }
+    },
+    required: ['frets', 'fingers', 'baseFret', 'barres']
+};
+
+const chordSchema = {
+    type: Type.OBJECT,
+    properties: {
+        name: { type: Type.STRING },
+        diagramData: chordDiagramDataSchema
+    },
+    required: ['name', 'diagramData']
+};
+
+// Schemas for Progressive Loading
+const coreMaterialsSchema = {
     type: Type.OBJECT,
     properties: {
         overview: {
@@ -102,138 +132,6 @@ const scaleDetailsSchema = {
                 degreeExplanation: { type: Type.STRING },
             },
             required: ['title', 'character', 'theory', 'usage', 'degreeExplanation']
-        },
-        listeningGuide: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    artist: { type: Type.STRING },
-                    spotifyLink: { type: Type.STRING }
-                },
-                required: ['title', 'artist', 'spotifyLink']
-            }
-        },
-        youtubeTutorials: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    creator: { type: Type.STRING },
-                    youtubeLink: { type: Type.STRING }
-                },
-                required: ['title', 'creator', 'youtubeLink']
-            }
-        },
-        creativeApplication: {
-             type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    creator: { type: Type.STRING },
-                    youtubeLink: { type: Type.STRING }
-                },
-                required: ['title', 'creator', 'youtubeLink']
-            }
-        },
-        jamTracks: {
-             type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    creator: { type: Type.STRING },
-                    youtubeLink: { type: Type.STRING }
-                },
-                required: ['title', 'creator', 'youtubeLink']
-            }
-        },
-        toneAndGear: {
-            type: Type.OBJECT,
-            properties: {
-                suggestions: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            setting: { type: Type.STRING, description: "e.g., 'Amp Settings', 'Effects'" },
-                            description: { type: Type.STRING }
-                        },
-                         required: ['setting', 'description']
-                    }
-                },
-                famousArtists: { type: Type.STRING, description: "A sentence listing artists known for this sound." }
-            },
-            required: ['suggestions', 'famousArtists']
-        },
-        keyChords: {
-            type: Type.OBJECT,
-            properties: {
-                diatonicQualities: { type: Type.STRING },
-                progressions: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING },
-                            analysis: { type: Type.STRING },
-                            tab: structuredTabSchema,
-                            harmonicFunctionAnalysis: { type: Type.STRING }
-                        },
-                        required: ['name', 'analysis', 'tab', 'harmonicFunctionAnalysis']
-                    }
-                }
-            },
-            required: ['diatonicQualities', 'progressions']
-        },
-        licks: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    tab: structuredTabSchema,
-                    sourceUrl: { type: Type.STRING }
-                },
-                required: ['name', 'description', 'tab', 'sourceUrl']
-            }
-        },
-        advancedHarmonization: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    tab: structuredTabSchema
-                },
-                required: ['name', 'description', 'tab']
-            }
-        },
-        etudes: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    tab: structuredTabSchema
-                },
-                required: ['name', 'description', 'tab']
-            }
-        },
-        modeSpotlight: {
-            type: Type.OBJECT,
-            properties: {
-                name: { type: Type.STRING },
-                explanation: { type: Type.STRING },
-                soundAndApplication: { type: Type.STRING }
-            },
-            required: ['name', 'explanation', 'soundAndApplication']
         },
         diagramData: {
             type: Type.OBJECT,
@@ -256,36 +154,10 @@ const scaleDetailsSchema = {
                 fingering: {
                     type: Type.OBJECT,
                     properties: {
-                        pos1: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    key: { type: Type.STRING, description: "Composite key 'string_fret', e.g., '6_2'" },
-                                    finger: { type: Type.STRING, description: "Recommended finger (1, 2, 3, or 4)" }
-                                }
-                            }
-                        },
-                        pos2: {
-                           type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    key: { type: Type.STRING, description: "Composite key 'string_fret', e.g., '6_2'" },
-                                    finger: { type: Type.STRING, description: "Recommended finger (1, 2, 3, or 4)" }
-                                }
-                            }
-                        },
-                        pos3: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    key: { type: Type.STRING, description: "Composite key 'string_fret', e.g., '6_2'" },
-                                    finger: { type: Type.STRING, description: "Recommended finger (1, 2, 3, or 4)" }
-                                }
-                            }
-                        }
+                        // Fix: Added `required` constraint to ensure fingering entries are valid.
+                        pos1: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { key: { type: Type.STRING }, finger: { type: Type.STRING } }, required: ['key', 'finger'] } },
+                        pos2: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { key: { type: Type.STRING }, finger: { type: Type.STRING } }, required: ['key', 'finger'] } },
+                        pos3: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { key: { type: Type.STRING }, finger: { type: Type.STRING } }, required: ['key', 'finger'] } }
                     },
                     required: ['pos1', 'pos2', 'pos3']
                 },
@@ -293,13 +165,7 @@ const scaleDetailsSchema = {
                     type: Type.ARRAY,
                     items: {
                         type: Type.OBJECT,
-                        properties: {
-                            string: { type: Type.NUMBER },
-                            fret: { type: Type.NUMBER },
-                            noteName: { type: Type.STRING },
-                            degree: { type: Type.STRING },
-                            finger: { type: Type.STRING }
-                        },
+                        properties: { string: { type: Type.NUMBER }, fret: { type: Type.NUMBER }, noteName: { type: Type.STRING }, degree: { type: Type.STRING }, finger: { type: Type.STRING } },
                         required: ['string', 'fret', 'noteName', 'degree', 'finger']
                     }
                 }
@@ -307,44 +173,80 @@ const scaleDetailsSchema = {
             required: ['tonicChordDegrees', 'characteristicDegrees', 'notesOnFretboard', 'fingering', 'diagonalRun']
         }
     },
-    required: ['overview', 'listeningGuide', 'youtubeTutorials', 'keyChords', 'licks', 'advancedHarmonization', 'etudes', 'modeSpotlight', 'diagramData', 'creativeApplication', 'jamTracks', 'toneAndGear']
+    required: ['overview', 'diagramData']
 };
 
-export const generateScaleMaterials = async (rootNote: string, scaleName: string): Promise<ScaleDetails> => {
-    const cacheKey = `${rootNote}_${scaleName}`;
-    if (scaleCache.has(cacheKey)) {
-        console.log("Returning cached data for", cacheKey);
-        return scaleCache.get(cacheKey)!;
-    }
+const resourcesSchema = {
+    type: Type.OBJECT,
+    properties: {
+        listeningGuide: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, artist: { type: Type.STRING }, spotifyLink: { type: Type.STRING } }, required: ['title', 'artist', 'spotifyLink'] } },
+        youtubeTutorials: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, creator: { type: Type.STRING }, youtubeLink: { type: Type.STRING } }, required: ['title', 'creator', 'youtubeLink'] } },
+        creativeApplication: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, creator: { type: Type.STRING }, youtubeLink: { type: Type.STRING } }, required: ['title', 'creator', 'youtubeLink'] } },
+        jamTracks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, creator: { type: Type.STRING }, youtubeLink: { type: Type.STRING } }, required: ['title', 'creator', 'youtubeLink'] } },
+        toneAndGear: { type: Type.OBJECT, properties: { suggestions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { setting: { type: Type.STRING }, description: { type: Type.STRING } }, required: ['setting', 'description'] } }, famousArtists: { type: Type.STRING } }, required: ['suggestions', 'famousArtists'] }
+    },
+    required: ['listeningGuide', 'youtubeTutorials', 'creativeApplication', 'jamTracks', 'toneAndGear']
+};
 
-    console.log("Fetching new data for", cacheKey);
-    const prompt = getScaleMaterialsPrompt(rootNote, scaleName);
+const practiceSchema = {
+    type: Type.OBJECT,
+    properties: {
+        keyChords: {
+            type: Type.OBJECT,
+            properties: {
+                diatonicQualities: { type: Type.STRING },
+                progressions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, analysis: { type: Type.STRING }, chords: { type: Type.ARRAY, items: chordSchema }, harmonicFunctionAnalysis: { type: Type.STRING } }, required: ['name', 'analysis', 'chords', 'harmonicFunctionAnalysis'] } }
+            },
+            required: ['diatonicQualities', 'progressions']
+        },
+        licks: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, description: { type: Type.STRING }, tab: structuredTabSchema, sourceUrl: { type: Type.STRING } }, required: ['name', 'description', 'tab', 'sourceUrl'] } },
+        advancedHarmonization: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, description: { type: Type.STRING }, tab: structuredTabSchema }, required: ['name', 'description', 'tab'] } },
+        etudes: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, description: { type: Type.STRING }, tab: structuredTabSchema }, required: ['name', 'description', 'tab'] } },
+        modeSpotlight: { type: Type.OBJECT, properties: { name: { type: Type.STRING }, explanation: { type: Type.STRING }, soundAndApplication: { type: Type.STRING } }, required: ['name', 'explanation', 'soundAndApplication'] }
+    },
+    required: ['keyChords', 'licks', 'advancedHarmonization', 'etudes', 'modeSpotlight']
+};
 
+
+const generateContent = async (prompt: string, schema: any, context: string): Promise<any> => {
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
-                responseSchema: scaleDetailsSchema,
+                responseSchema: schema,
                 temperature: 0.2
             },
         });
-
-        const jsonString = response.text;
-        const parsedData = JSON.parse(jsonString);
-
-        scaleCache.set(cacheKey, parsedData);
-        return parsedData as ScaleDetails;
+        return JSON.parse(response.text);
     } catch (e: any) {
-        let errorMessage = `Error generating scale materials.`;
+        let errorMessage = `Error generating ${context}.`;
         try {
            const errorObj = JSON.parse(e.message);
            errorMessage += `\n${JSON.stringify(errorObj, null, 2)}`;
         } catch {
             errorMessage += `\n${e.message}`;
         }
-        console.error("Error generating scale materials:", e);
+        console.error(`Error generating ${context}:`, e);
         throw new Error(errorMessage);
     }
+};
+
+export const generateCoreMaterials = async (rootNote: string, scaleName: string): Promise<Pick<ScaleDetails, 'overview' | 'diagramData'>> => {
+    console.log("Fetching core materials for", `${rootNote} ${scaleName}`);
+    const prompt = getCoreMaterialsPrompt(rootNote, scaleName);
+    return generateContent(prompt, coreMaterialsSchema, 'core materials');
+};
+
+export const generateResources = async (rootNote: string, scaleName: string): Promise<Pick<ScaleDetails, 'listeningGuide' | 'youtubeTutorials' | 'creativeApplication' | 'jamTracks' | 'toneAndGear'>> => {
+    console.log("Fetching resources for", `${rootNote} ${scaleName}`);
+    const prompt = getResourcesPrompt(rootNote, scaleName);
+    return generateContent(prompt, resourcesSchema, 'resources');
+};
+
+export const generatePractice = async (rootNote: string, scaleName: string): Promise<Pick<ScaleDetails, 'keyChords' | 'licks' | 'advancedHarmonization' | 'etudes' | 'modeSpotlight'>> => {
+    console.log("Fetching practice materials for", `${rootNote} ${scaleName}`);
+    const prompt = getPracticePrompt(rootNote, scaleName);
+    return generateContent(prompt, practiceSchema, 'practice materials');
 };

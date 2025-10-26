@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import type { ScaleDetails } from '../types';
+import type { ScaleDetails, FontSizeKey } from '../types';
 import Card from './common/Card';
-import { FontSizeKey } from '../App';
 import { COLORS } from '../constants';
 
-// Import the new section components
+// Import the section components
 import OverviewSection from './scaleExplorerSections/OverviewSection';
 import DiagramsSection from './scaleExplorerSections/DiagramsSection';
 import ResourceSection from './scaleExplorerSections/ResourceSection';
@@ -20,7 +20,7 @@ const LoadingState = () => (
     <Card>
         <div className="flex flex-col items-center justify-center p-16">
             <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-cyan-400"></div>
-            <p className="mt-4 text-lg font-semibold" style={{ color: COLORS.textPrimary }}>Generating your materials... this may take a moment.</p>
+            <p className="mt-4 text-lg font-semibold" style={{ color: COLORS.textPrimary }}>Generating your materials...</p>
         </div>
     </Card>
 );
@@ -34,12 +34,26 @@ const WelcomeState = () => (
     </Card>
 );
 
+const SectionLoader: React.FC = () => (
+    <Card>
+        <div className="p-8 animate-pulse">
+            <div className="h-8 bg-gray-700/50 rounded w-3/4 mb-6"></div>
+            <div className="space-y-4">
+                <div className="h-4 bg-gray-700/50 rounded w-full"></div>
+                <div className="h-4 bg-gray-700/50 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-700/50 rounded w-full"></div>
+            </div>
+        </div>
+    </Card>
+);
+
+
 const ScaleExplorer: React.FC<ScaleExplorerProps> = ({ isLoading, scaleDetails, fontSize }) => {
+    // This state is used for the initial fade-in of the entire container
     const [isContentLoaded, setIsContentLoaded] = useState(false);
 
     useEffect(() => {
         if (scaleDetails) {
-            // Use a short delay to allow for a fade-in animation
             const timer = setTimeout(() => setIsContentLoaded(true), 100);
             return () => clearTimeout(timer);
         } else {
@@ -47,7 +61,7 @@ const ScaleExplorer: React.FC<ScaleExplorerProps> = ({ isLoading, scaleDetails, 
         }
     }, [scaleDetails]);
 
-    if (isLoading) {
+    if (isLoading && !scaleDetails) {
         return <LoadingState />;
     }
 
@@ -57,15 +71,28 @@ const ScaleExplorer: React.FC<ScaleExplorerProps> = ({ isLoading, scaleDetails, 
 
     return (
         <div className={`space-y-12 transition-opacity duration-700 ease-in-out ${isContentLoaded ? 'opacity-100' : 'opacity-0'}`}>
-            <OverviewSection overview={scaleDetails.overview} />
-            <DiagramsSection title={scaleDetails.overview.title} diagramData={scaleDetails.diagramData} fontSize={fontSize} />
-            <ResourceSection 
-                listeningGuide={scaleDetails.listeningGuide}
-                youtubeTutorials={scaleDetails.youtubeTutorials}
-                creativeApplication={scaleDetails.creativeApplication}
-                jamTracks={scaleDetails.jamTracks}
-            />
-            <PracticeSection scaleDetails={scaleDetails} />
+            {/* Core materials - these are guaranteed to be present if scaleDetails is not null */}
+            <OverviewSection overview={scaleDetails.overview!} />
+            <DiagramsSection title={scaleDetails.overview!.title} diagramData={scaleDetails.diagramData!} fontSize={fontSize} />
+
+            {/* Resources section - loads second */}
+            {scaleDetails.listeningGuide ? (
+                <ResourceSection 
+                    listeningGuide={scaleDetails.listeningGuide}
+                    youtubeTutorials={scaleDetails.youtubeTutorials!}
+                    creativeApplication={scaleDetails.creativeApplication!}
+                    jamTracks={scaleDetails.jamTracks!}
+                />
+            ) : (
+                isLoading && <SectionLoader />
+            )}
+
+            {/* Practice section - loads last */}
+            {scaleDetails.keyChords ? (
+                <PracticeSection scaleDetails={scaleDetails} />
+            ) : (
+                isLoading && <SectionLoader />
+            )}
         </div>
     );
 };

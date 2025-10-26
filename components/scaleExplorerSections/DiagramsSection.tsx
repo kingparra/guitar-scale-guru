@@ -1,8 +1,10 @@
+
 import React from 'react';
 import FretboardDiagram from '../FretboardDiagram';
-import type { ScaleDetails } from '../../types';
-import { FontSizeKey, FONT_SIZES } from '../../App';
+import type { ScaleDetails, FontSizeKey } from '../../types';
+import { FONT_SIZES } from '../../constants';
 import { NUM_FRETS } from '../../constants';
+import { calculatePlayableFretRange } from '../../utils/diagramUtils';
 
 interface DiagramsSectionProps {
     title: string;
@@ -10,22 +12,10 @@ interface DiagramsSectionProps {
     fontSize: FontSizeKey;
 }
 
-// Helper to find the lowest fret in a fingering map for a dynamic fret range.
-const calculatePlayableFretRange = (fingeringMap: ScaleDetails['diagramData']['fingering']['pos1']): [number, number] => {
-    if (!fingeringMap || fingeringMap.length === 0) {
-        return [1, 5]; // Default fallback, starting at 1 for position diagrams
-    }
-    // Extract fret numbers from 'string_fret' key
-    const frets = fingeringMap.map(item => parseInt(item.key.split('_')[1], 10));
-    const minFret = Math.min(...frets.filter(f => f > 0)); // Ignore open strings for range calculation
-    const startFret = minFret > 1 ? minFret : 1; // Start from fret 1 unless the position is higher
-    return [startFret, startFret + 4];
-};
-
 const DiagramsSection: React.FC<DiagramsSectionProps> = ({ title, diagramData, fontSize }) => {
     const fontScaleValue = parseFloat(FONT_SIZES[fontSize].replace('rem', ''));
 
-    // Dynamically calculate the range for each position
+    // Dynamically calculate the range for each position using the centralized helper
     const pos1Range = calculatePlayableFretRange(diagramData.fingering.pos1);
     const pos2Range = calculatePlayableFretRange(diagramData.fingering.pos2);
     const pos3Range = calculatePlayableFretRange(diagramData.fingering.pos3);

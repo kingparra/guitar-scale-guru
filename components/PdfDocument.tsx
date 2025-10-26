@@ -1,7 +1,7 @@
+
 import React, { forwardRef } from 'react';
-import type { ScaleDetails } from '../types';
+import type { ScaleDetails, FontSizeKey } from '../types';
 import { COLORS } from '../constants';
-import { FontSizeKey } from '../App';
 
 // Import the same section components used by the main UI
 import OverviewSection from './scaleExplorerSections/OverviewSection';

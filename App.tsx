@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
-import type { SongAnalysisResult } from './types';
-import { COLORS } from './constants';
+import type { SongAnalysisResult, FontSizeKey } from './types';
+import { COLORS, FONT_SIZES } from './constants';
 
 import { useScaleGenerator } from './hooks/useScaleGenerator';
 import { useNotationAnalyzer } from './hooks/useNotationAnalyzer';
@@ -10,16 +11,7 @@ import ControlPanel from './components/ControlPanel';
 import NotationAnalyzer from './components/NotationAnalyzer';
 import ScaleExplorer from './components/ScaleExplorer';
 import PdfDocument from './components/PdfDocument';
-
-export const FONT_SIZES = { 'S': '0.75rem', 'M': '0.875rem', 'L': '1rem' };
-export type FontSizeKey = keyof typeof FONT_SIZES;
-
-const Footer = () => (
-    <footer className="text-center py-8 mt-16 border-t border-purple-400/20">
-        <p style={{ color: COLORS.textSecondary }}>Crafted by a World-Class Senior Frontend Engineer</p>
-        <p className="text-purple-400/50 text-sm">Powered by Gemini API & React</p>
-    </footer>
-);
+import Footer from './components/common/Footer';
 
 const App: React.FC = () => {
     const [fontSize, setFontSize] = useState<FontSizeKey>('M');

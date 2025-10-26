@@ -1,4 +1,6 @@
 
+import { FontSizeKey } from "./types";
+
 export const TUNING = ['E', 'B', 'G', 'D', 'A', 'E', 'B']; // High to low
 export const NUM_STRINGS = 7;
 export const NUM_FRETS = 24; // Standard 24-fret guitar has frets 0-24.
@@ -34,3 +36,5 @@ export const COLORS = {
     characteristicOutline: '#FF00FF', // Magenta outline
     resolutionArrow: '#9370DB',
 };
+
+export const FONT_SIZES: Record<FontSizeKey, string> = { 'S': '0.75rem', 'M': '0.875rem', 'L': '1rem' };
