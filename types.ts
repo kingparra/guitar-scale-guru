@@ -27,11 +27,6 @@ export interface ToneSuggestion {
     description: string;
 }
 
-export interface PracticeStep {
-    duration: string;
-    activity: string;
-}
-
 export interface ChordProgression {
     name: string;
     analysis: string;
@@ -100,7 +95,6 @@ export interface ScaleDetails {
         suggestions: ToneSuggestion[];
         famousArtists: string;
     };
-    practicePlan: PracticeStep[];
     keyChords: {
         diatonicQualities: string;
         progressions: ChordProgression[];

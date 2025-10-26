@@ -88,17 +88,6 @@ const responseSchema = {
             },
             required: ['suggestions', 'famousArtists']
         },
-        practicePlan: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    duration: { type: Type.STRING, description: "e.g., '5-10 Mins'" },
-                    activity: { type: Type.STRING, description: "e.g., 'Warm-up: Scale Ascending/Descending'" }
-                },
-                required: ['duration', 'activity']
-            }
-        },
         keyChords: {
             type: Type.OBJECT,
             properties: {
@@ -222,7 +211,7 @@ const responseSchema = {
             required: ['tonicChordDegrees', 'characteristicDegrees', 'notesOnFretboard', 'fingering']
         }
     },
-    required: ['overview', 'listeningGuide', 'youtubeTutorials', 'keyChords', 'licks', 'advancedHarmonization', 'etudes', 'modeSpotlight', 'diagramData', 'creativeApplication', 'jamTracks', 'toneAndGear', 'practicePlan']
+    required: ['overview', 'listeningGuide', 'youtubeTutorials', 'keyChords', 'licks', 'advancedHarmonization', 'etudes', 'modeSpotlight', 'diagramData', 'creativeApplication', 'jamTracks', 'toneAndGear']
 };
 
 
@@ -235,7 +224,7 @@ export const generateScaleMaterials = async (rootNote: string, scaleName: string
 
     console.log("Fetching new data for", cacheKey);
     const prompt = `
-    ### **Master Prompt for Generating Guitar Scale Materials (Version 3.0)**
+    ### **Master Prompt for Generating Guitar Scale Materials (Version 3.1)**
 
     **Request:** Generate a complete set of learning materials for the **${rootNote} ${scaleName}** scale on a seven-string guitar (tuned B E A D G B E, low to high).
 
@@ -244,11 +233,11 @@ export const generateScaleMaterials = async (rootNote: string, scaleName: string
     ---
 
     #### **1. Core Mission & Purpose**
-    Your primary goal is to deliver musically useful, instantly readable guitar scale materials for a seven-string guitar. The experience is staged for learning: begin with deep context, show a clear full-neck diagram, explain the harmonic function, present playable positions, and only then provide advanced exercises and resources, including practical application tools like jam tracks and practice plans.
+    Your primary goal is to deliver musically useful, instantly readable guitar scale materials for a seven-string guitar. The experience is staged for learning: begin with deep context, show a clear full-neck diagram, explain the harmonic function, present playable positions, and only then provide advanced exercises and resources.
 
     ---
     #### **2. JSON Content & Structure Requirements**
-    A new scale request **must** return a single JSON object containing all of the following top-level keys: "overview", "listeningGuide", "youtubeTutorials", "creativeApplication", "jamTracks", "toneAndGear", "practicePlan", "keyChords", "licks", "advancedHarmonization", "etudes", "modeSpotlight", "diagramData".
+    A new scale request **must** return a single JSON object containing all of the following top-level keys: "overview", "listeningGuide", "youtubeTutorials", "creativeApplication", "jamTracks", "toneAndGear", "keyChords", "licks", "advancedHarmonization", "etudes", "modeSpotlight", "diagramData".
 
     1.  **overview**:
         *   **title**: The full name, e.g., "${rootNote} ${scaleName}".
@@ -278,31 +267,26 @@ export const generateScaleMaterials = async (rootNote: string, scaleName: string
         *   **suggestions**: (Array of ToneSuggestion objects) Provide tips for amp settings, effects (delay, reverb, overdrive), and pickup selection.
         *   **famousArtists**: A brief sentence listing famous guitarists associated with the scale's sound and their typical gear.
 
-    7.  **practicePlan:** (Array of 4-5 PracticeStep objects)
-        *   Provide a simple, actionable practice plan with exercises based on the generated material.
-        *   **duration**: e.g., "5 Mins", "10 Mins".
-        *   **activity**: e.g., "Technical Etude: Practice the sequential 3rds pattern."
-
-    8.  **keyChords:**
+    7.  **keyChords:**
         *   **diatonicQualities**: Single-line reference (e.g., \`i-ii°-III+-iv-V-VI-vii°\`).
         *   **progressions**: (Array of 2 ChordProgression objects) Provide TAB and analysis for short, idiomatic chord progressions.
 
-    9.  **licks:** (Array of 1-2 Lick objects)
+    8.  **licks:** (Array of 1-2 Lick objects)
         *   Research a classic, idiomatic guitar lick using the scale.
         *   **tab**: Provide the guitar TAB.
         *   **sourceUrl**: A valid, direct URL to the source page or video.
 
-    10. **advancedHarmonization:** (Array of HarmonizationExercise objects)
-        *   Include extended TAB exercises for diatonic triads and seventh chord arpeggios.
+    9. **advancedHarmonization:** (Array of 1-2 HarmonizationExercise objects)
+        *   CRITICAL: These MUST be comprehensive exercises. For example, a TAB of diatonic triads played in sequence, ascending the neck and connecting at least two different fretboard positions. Do NOT provide a simple, single-position exercise. It must demonstrate movement across the fretboard.
 
-    11. **etudes:** (Array of Etude objects)
-        *   Include a technical etude (e.g., sequential 3rds) and a musical "mini-composition".
+    10. **etudes:** (Array of 1-2 Etude objects)
+        *   CRITICAL: These MUST be comprehensive musical pieces. For example, a technical etude could be the scale played in sequential 4ths, spanning multiple octaves and positions. The musical etude should be a titled "mini-composition" that is at least 4 bars long and travels across different strings and fretboard regions, telling a small musical story. Do NOT provide simple, single-string patterns.
 
-    12. **modeSpotlight:**
+    11. **modeSpotlight:**
         *   **name**: Spotlight the most useful mode (e.g., "5th Mode: Phrygian Dominant").
         *   **explanation**, **soundAndApplication**.
 
-    13. **diagramData:**
+    12. **diagramData:**
         *   **tonicChordDegrees**: e.g., ["R", "b3", "5"].
         *   **characteristicDegrees**: e.g., ["b6", "7"].
         *   **notesOnFretboard**: Array of ALL notes of the scale from fret 0 to 25 on all 7 strings.

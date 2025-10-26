@@ -186,7 +186,7 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({ title, scaleData, f
                                 ) : (
                                     <circle {...markerProps} />
                                 )}
-                                <text x={noteX} y={noteY + (noteFontSize * fontScale * 0.35)} fontSize={noteFontSize * fontScale} fill={fret === 0 ? '#000' : '#FFF'} textAnchor="middle" fontWeight="bold">{noteName}</text>
+                                <text x={noteX} y={noteY + (noteFontSize * fontScale * 0.35)} fontSize={noteFontSize * fontScale} fill={fret === 0 ? '#000' : COLORS.bgPrimary} textAnchor="middle" fontWeight="bold">{noteName}</text>
                                 <text x={noteX + degreeOffset} y={noteY - degreeOffset} fontSize={degreeFontSize * fontScale} fill={COLORS.textPrimary} textAnchor="middle" fontWeight="bold">{degree}</text>
                                 {finger && <text x={noteX - textOffset} y={noteY - textOffset} fontSize={fingerFontSize * fontScale} fill={COLORS.textPrimary} textAnchor="middle" fontWeight="bold">{finger}</text>}
                             </g>
