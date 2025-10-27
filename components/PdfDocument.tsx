@@ -8,6 +8,20 @@ import DiagramsSection from './scaleExplorerSections/DiagramsSection';
 import ResourceSection from './scaleExplorerSections/ResourceSection';
 import PracticeSection from './scaleExplorerSections/PracticeSection';
 
+// Import individual content components for correct rendering
+import ResourceList from './scaleExplorerSections/ResourceList';
+import KeyChordsSection from './practiceSections/KeyChordsSection';
+import ToneAndGearSection from './practiceSections/ToneAndGearSection';
+import TabbedPracticeItem from './practiceSections/TabbedPracticeItem';
+import ModeSpotlightSection from './practiceSections/ModeSpotlightSection';
+import Card from './common/Card';
+import {
+    SpotifyIcon,
+    YouTubeIcon,
+    LightbulbIcon,
+    JamIcon,
+} from './common/Icons';
+
 interface PdfDocumentProps {
     scaleDetails: ScaleDetails;
     fontSize: FontSizeKey;
@@ -21,11 +35,7 @@ const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
     ({ scaleDetails, fontSize }, ref) => {
         // These checks are critical because this component will only be rendered
         // when isContentComplete is true, so we can assume these properties exist.
-        if (
-            !scaleDetails.overview ||
-            !scaleDetails.diagramData ||
-            !scaleDetails.listeningGuide
-        ) {
+        if (!scaleDetails.overview || !scaleDetails.diagramData) {
             return null;
         }
 
@@ -90,7 +100,12 @@ const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                 <div style={sectionWrapperStyles}>
                     <section>
                         <h2 style={h2SectionStyles}>Overview</h2>
-                        <OverviewSection overview={scaleDetails.overview} />
+                        <OverviewSection
+                            overview={scaleDetails.overview}
+                            degreeExplanation={
+                                scaleDetails.degreeExplanation || ''
+                            }
+                        />
                     </section>
                     <section>
                         <h2 style={h2SectionStyles}>Diagrams</h2>
@@ -101,14 +116,70 @@ const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                     </section>
                     <section>
                         <h2 style={h2SectionStyles}>Resources</h2>
-                        <ResourceSection scaleDetails={scaleDetails} />
+                        <ResourceSection>
+                            {scaleDetails.listeningGuide && (
+                                <ResourceList
+                                    items={scaleDetails.listeningGuide}
+                                    icon={<SpotifyIcon />}
+                                />
+                            )}
+                            {scaleDetails.youtubeTutorials && (
+                                <ResourceList
+                                    items={scaleDetails.youtubeTutorials}
+                                    icon={<YouTubeIcon />}
+                                />
+                            )}
+                            {scaleDetails.creativeApplication && (
+                                <ResourceList
+                                    items={scaleDetails.creativeApplication}
+                                    icon={<LightbulbIcon />}
+                                />
+                            )}
+                            {scaleDetails.jamTracks && (
+                                <ResourceList
+                                    items={scaleDetails.jamTracks}
+                                    icon={<JamIcon />}
+                                />
+                            )}
+                        </ResourceSection>
                     </section>
                     <section>
                         <h2 style={h2SectionStyles}>Practice Materials</h2>
-                        <PracticeSection
-                            scaleDetails={scaleDetails}
-                            fontSize={fontSize}
-                        />
+                        <PracticeSection>
+                            {scaleDetails.toneAndGear && (
+                                <ToneAndGearSection
+                                    toneAndGear={scaleDetails.toneAndGear}
+                                />
+                            )}
+                            {scaleDetails.keyChords && (
+                                <KeyChordsSection
+                                    keyChords={scaleDetails.keyChords}
+                                    fontSize={fontSize}
+                                />
+                            )}
+                            {scaleDetails.licks?.map((item, index) => (
+                                <Card key={`lick-${index}`}>
+                                    <TabbedPracticeItem item={item} />
+                                </Card>
+                            ))}
+                            {scaleDetails.advancedHarmonization?.map(
+                                (item, index) => (
+                                    <Card key={`harm-${index}`}>
+                                        <TabbedPracticeItem item={item} />
+                                    </Card>
+                                )
+                            )}
+                            {scaleDetails.etudes?.map((item, index) => (
+                                <Card key={`etude-${index}`}>
+                                    <TabbedPracticeItem item={item} />
+                                </Card>
+                            ))}
+                            {scaleDetails.modeSpotlight && (
+                                <ModeSpotlightSection
+                                    modeSpotlight={scaleDetails.modeSpotlight}
+                                />
+                            )}
+                        </PracticeSection>
                     </section>
                 </div>
             </div>

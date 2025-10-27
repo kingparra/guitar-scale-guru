@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import type { SongAnalysisResult, FontSizeKey } from './types';
+// FIX: Added import for ScaleDetails
+import type { SongAnalysisResult, FontSizeKey, SectionKey, ScaleDetails } from './types';
 import { COLORS, FONT_SIZES } from './constants';
 
 import { useScaleGenerator } from './hooks/useScaleGenerator';
@@ -26,10 +27,9 @@ const App: React.FC = () => {
         scaleName,
         setRootNote,
         setScaleName,
-        scaleDetails,
-        isLoading: isGenerating,
-        error: generationError,
+        loadingState,
         generate,
+        retrySection,
     } = useScaleGenerator();
 
     const {
@@ -40,13 +40,41 @@ const App: React.FC = () => {
         ...notationAnalyzerProps
     } = useNotationAnalyzer();
 
+    const scaleDetails = React.useMemo(() => {
+        if (loadingState.status === 'idle' || loadingState.status === 'loading') {
+             const partialDetails: any = {};
+             Object.entries(loadingState.sections).forEach(([key, sectionState]) => {
+                // FIX: Cast sectionState to any to access properties due to type inference issue.
+                if((sectionState as any).status === 'success') {
+                    // FIX: Cast sectionState to any to access properties due to type inference issue.
+                    partialDetails[key] = (sectionState as any).data;
+                }
+             });
+             return partialDetails;
+        }
+        const finalDetails: any = {};
+        Object.entries(loadingState.sections).forEach(([key, sectionState]) => {
+            // FIX: Cast sectionState to any to access properties due to type inference issue.
+            if ((sectionState as any).data) {
+                // FIX: Cast sectionState to any to access properties due to type inference issue.
+                finalDetails[key] = (sectionState as any).data;
+            }
+        });
+        return finalDetails as ScaleDetails;
+    }, [loadingState]);
+
+
     const { isSavingPdf, pdfError, generatePdf } = usePdfGenerator(
         pdfContentRef,
-        scaleDetails
+        scaleDetails as ScaleDetails
     );
 
     const handleGenerate = async (note: string, scale: string) => {
         await generate(note, scale);
+    };
+
+    const handleRetrySection = async (sectionKey: SectionKey) => {
+        await retrySection(sectionKey);
     };
 
     const handleGenerateFromAnalysis = (result: SongAnalysisResult) => {
@@ -56,16 +84,11 @@ const App: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const combinedError = generationError || analysisError || pdfError;
-    const isBusy = isGenerating || isAnalyzing || isSavingPdf;
-
-    // A more robust check for content completion. It ensures all major async data sections are loaded.
-    const isContentComplete = !!(
-        scaleDetails &&
-        scaleDetails.overview &&
-        scaleDetails.listeningGuide && // Part of resources
-        scaleDetails.keyChords // Part of practice
-    );
+    const isBusy = loadingState.isActive || isAnalyzing || isSavingPdf;
+    const isContentComplete =
+        !loadingState.isActive &&
+        // FIX: Cast s to any to access properties due to type inference issue.
+        Object.values(loadingState.sections).some((s) => (s as any).status === 'success');
 
     return (
         <div
@@ -104,15 +127,16 @@ const App: React.FC = () => {
                         fontSize={fontSize}
                         setFontSize={setFontSize}
                     />
+
                     <div className="content-area space-y-8 mt-8">
-                        {combinedError && (
+                        {analysisError && (
                             <div className="p-[2px] bg-gradient-to-br from-red-500/80 to-orange-500/80 rounded-2xl shadow-lg">
                                 <div className="bg-[#171528]/80 backdrop-blur-lg p-6 rounded-[14px]">
                                     <h3 className="font-bold text-lg mb-2 text-center text-red-300">
-                                        An Error Occurred
+                                        Analysis Error
                                     </h3>
                                     <pre className="text-left whitespace-pre-wrap bg-black/20 p-3 rounded-md text-sm">
-                                        {combinedError}
+                                        {analysisError}
                                     </pre>
                                 </div>
                             </div>
@@ -128,9 +152,9 @@ const App: React.FC = () => {
 
                         <div id="scale-content">
                             <ScaleExplorer
-                                isLoading={isGenerating}
-                                scaleDetails={scaleDetails}
+                                loadingState={loadingState}
                                 fontSize={fontSize}
+                                onRetrySection={handleRetrySection}
                             />
                         </div>
                     </div>
@@ -138,11 +162,10 @@ const App: React.FC = () => {
                 <Footer />
             </div>
 
-            {/* Hidden component for PDF generation. Now it only renders when ALL content is complete. */}
             {isContentComplete && scaleDetails && (
                 <PdfDocument
                     ref={pdfContentRef}
-                    scaleDetails={scaleDetails}
+                    scaleDetails={scaleDetails as ScaleDetails}
                     fontSize={fontSize}
                 />
             )}

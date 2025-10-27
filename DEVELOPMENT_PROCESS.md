@@ -8,6 +8,9 @@ This is a living document and should be updated as our process evolves.
 
 ## 1. Core Philosophy
 
+### Implement and Save
+All changes described in a commit message or pull request description must be fully implemented and saved in the corresponding code diff. Descriptions must be a factual report of the work completed, not a plan for work to be done.
+
 ### "Tidy First?" - Kent Beck
 
 We subscribe to the "Tidy First?" methodology. Before adding new functionality or fixing a bug, we first ask if the existing code can be made cleaner. This could involve renaming a variable, extracting a function, or improving a comment. A small tidying session makes the subsequent change easier and safer to implement. We always strive to leave the code cleaner than we found it.

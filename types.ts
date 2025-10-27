@@ -190,3 +190,19 @@ export interface SongAnalysisResult {
 }
 
 export type FontSizeKey = 'S' | 'M' | 'L';
+
+// Types for the new granular loading state
+export type LoadingStepStatus = 'pending' | 'loading' | 'success' | 'error';
+export type SectionKey = keyof Omit<ScaleDetails, 'diagramData' | 'degreeExplanation'>;
+
+export interface SectionState {
+    status: LoadingStepStatus;
+    error: string | null;
+    data: any; // The data for this specific section
+}
+
+export interface LoadingState {
+    isActive: boolean;
+    status: 'idle' | 'loading' | 'success' | 'error' | 'interrupted';
+    sections: Record<SectionKey, SectionState>;
+}

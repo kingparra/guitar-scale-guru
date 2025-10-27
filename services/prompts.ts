@@ -15,7 +15,7 @@ Return a single, valid JSON array that strictly adheres to the provided schema. 
 `;
 
 const commonPromptHeader = (rootNote: string, scaleName: string) => `
-### **Master Prompt for Generating Guitar Scale Materials (Version 13.0 - Client-Side Chords)**
+### **Master Prompt for Generating Guitar Scale Materials (Version 14.0 - Per-Card Loading)**
 
 **Request:** Generate a specific section of learning materials for the **${rootNote} ${scaleName}** scale on a seven-string guitar (tuned B E A D G B E, low to high).
 
@@ -39,68 +39,93 @@ All linear tablature (for licks, etudes) MUST be provided in the following struc
 *   **Bar Lines**: Represent a bar line with a column where ALL 7 strings have a \`TabNote\` with \`fret: "|" \`.
 `;
 
-// This prompt is now deprecated as scale notes are generated client-side.
-// It is kept here for reference but is no longer called by the application.
-export const getScaleNotesPrompt = (rootNote: string, scaleName: string) => `
-${commonPromptHeader(rootNote, scaleName)}
----
-#### **SECTION TO GENERATE: Scale Notes ONLY**
-Generate ONLY the 'scaleNotes' array for the requested scale.
-`;
-
 export const getOverviewPrompt = (rootNote: string, scaleName: string) => `
 ${commonPromptHeader(rootNote, scaleName)}
 ---
 #### **SECTION TO GENERATE: Overview ONLY**
 Generate the JSON content for the 'overview' section. This is a text-only section.
-
-1.  **overview**:
-    *   **DO NOT** include \`scaleNotes\`. This is generated client-side.
-    *   **DO NOT** include \`degreeExplanation\`. This is generated client-side.
-
----
-**CRITICAL INSTRUCTION:** Generate only the requested 'overview' section as a single, complete JSON object.
 `;
 
-export const getResourcesPrompt = (rootNote: string, scaleName:string) => `
+// --- NEW DECOMPOSED PROMPTS ---
+
+export const getListeningGuidePrompt = (rootNote: string, scaleName: string) => `
 ${commonPromptHeader(rootNote, scaleName)}
 ---
-#### **SECTION TO GENERATE: Resources**
-Generate the JSON content for the 'listeningGuide', 'youtubeTutorials', 'creativeApplication', 'jamTracks', and 'toneAndGear' sections ONLY.
-
-1.  **listeningGuide / youtubeTutorials / etc.**:
-    *   Arrays of 2-4 objects each.
-    *   Select "deeper cuts" or tracks from technical genres. Avoid over-cited examples.
-    *   Provide valid **search URLs**.
-2.  **toneAndGear**:
-    *   Provide tips for amp settings, effects, and pickups.
-
----
-**CRITICAL INSTRUCTION:** Generate only the requested resource sections as a single, complete JSON object.
+#### **SECTION TO GENERATE: Listening Guide ONLY**
+Generate the 'listeningGuide' array. Select 2-4 "deeper cuts" or tracks from technical genres. Avoid over-cited examples. Provide valid **search URLs**.
 `;
 
-export const getPracticePrompt = (rootNote: string, scaleName: string) => `
+export const getYoutubeTutorialsPrompt = (
+    rootNote: string,
+    scaleName: string
+) => `
 ${commonPromptHeader(rootNote, scaleName)}
 ---
-#### **SECTION TO GENERATE: Practice Materials**
-Generate the JSON content for 'keyChords', 'licks', 'advancedHarmonization', 'etudes', and 'modeSpotlight'.
+#### **SECTION TO GENERATE: YouTube Tutorials ONLY**
+Generate the 'youtubeTutorials' array. Provide 2-4 links to high-quality lessons.
+`;
 
-1.  **keyChords**:
-    *   **diatonicQualities**: Single-line reference (e.g., \`i-ii°-III+-iv-V-VI-vii°\`).
-    *   **progressions**: Array of 2 ChordProgression objects. For each chord in a progression, you **MUST** provide its roman numeral analysis in the \`degree\` field (e.g., "I", "V", "vi"). **DO NOT** provide \`diagramData\`.
-
-2.  **licks:** (Array of 1-2 Lick objects)
-    *   Create musically interesting licks demonstrating a key characteristic of the scale.
-    *   **tab**: Must be a \`StructuredTab\` object.
-
-3. **advancedHarmonization:** (Array of 1-2 HarmonizationExercise objects)
-    *   **CRITICAL:** Generate the \`name\` and \`description\` for an exercise (e.g., "Scale in Diatonic Thirds").
-    *   **DO NOT GENERATE THE \`tab\`**. The client application will generate it.
-
-4. **etudes:** (Array of 1-2 Etude objects)
-    *   Create a comprehensive musical piece (at least 8 bars long).
-    *   **tab**: Must be a \`StructuredTab\` object.
-
+export const getCreativeApplicationPrompt = (
+    rootNote: string,
+    scaleName: string
+) => `
+${commonPromptHeader(rootNote, scaleName)}
 ---
-**CRITICAL INSTRUCTION:** Generate only the requested practice sections as a single, complete JSON object.
+#### **SECTION TO GENERATE: Creative Application ONLY**
+Generate the 'creativeApplication' array. Find 2-4 videos showcasing the scale in a creative, non-tutorial context (e.g., solos, compositions).
+`;
+
+export const getJamTracksPrompt = (rootNote: string, scaleName: string) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Jam Tracks ONLY**
+Generate the 'jamTracks' array. Find 2-4 high-quality backing tracks on YouTube.
+`;
+
+export const getToneAndGearPrompt = (rootNote: string, scaleName: string) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Tone & Gear ONLY**
+Generate the 'toneAndGear' object. Provide tips for amp settings, effects, and pickups, and list famous artists who use the scale.
+`;
+
+export const getKeyChordsPrompt = (rootNote: string, scaleName: string) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Key Chords & Progressions ONLY**
+Generate the 'keyChords' object.
+1.  **diatonicQualities**: Single-line reference (e.g., \`i-ii°-III+-iv-V-VI-vii°\`).
+2.  **progressions**: Array of 2 ChordProgression objects. For each chord, provide its roman numeral \`degree\`. **DO NOT** provide \`diagramData\`.
+`;
+
+export const getLicksPrompt = (rootNote: string, scaleName: string) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Licks ONLY**
+Generate the 'licks' array (1-2 licks). Licks should be musically interesting and use \`StructuredTab\`.
+`;
+
+export const getAdvancedHarmonizationPrompt = (
+    rootNote: string,
+    scaleName: string
+) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Advanced Harmonization ONLY**
+Generate the 'advancedHarmonization' array (1-2 exercises).
+**CRITICAL:** Provide ONLY the \`name\` and \`description\`. **DO NOT GENERATE THE \`tab\`**.
+`;
+
+export const getEtudesPrompt = (rootNote: string, scaleName: string) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Etudes ONLY**
+Generate the 'etudes' array (1-2 etudes). Etudes should be comprehensive musical pieces (at least 8 bars) using \`StructuredTab\`.
+`;
+
+export const getModeSpotlightPrompt = (rootNote: string, scaleName: string) => `
+${commonPromptHeader(rootNote, scaleName)}
+---
+#### **SECTION TO GENERATE: Mode Spotlight ONLY**
+Generate the 'modeSpotlight' object. Pick a mode of the scale and explain its sound and application.
 `;
