@@ -9,7 +9,10 @@ export interface ProcessedPdf {
     mimeType: string;
 }
 
-export const processPdf = async (file: File, onProgress: (message: string) => void): Promise<ProcessedPdf> => {
+export const processPdf = async (
+    file: File,
+    onProgress: (message: string) => void
+): Promise<ProcessedPdf> => {
     const fileBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
     const numPages = pdf.numPages;
@@ -27,7 +30,8 @@ export const processPdf = async (file: File, onProgress: (message: string) => vo
         canvas.height = viewport.height;
         const context = canvas.getContext('2d');
         if (context) {
-            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            await page.render({ canvasContext: context, viewport: viewport })
+                .promise;
             pageCanvases.push(canvas);
             totalHeight += canvas.height;
             maxWidth = Math.max(maxWidth, canvas.width);
@@ -35,7 +39,7 @@ export const processPdf = async (file: File, onProgress: (message: string) => vo
     }
 
     if (pageCanvases.length === 0) {
-        throw new Error("No pages could be rendered from the PDF.");
+        throw new Error('No pages could be rendered from the PDF.');
     }
 
     const compositeCanvas = document.createElement('canvas');
@@ -44,7 +48,7 @@ export const processPdf = async (file: File, onProgress: (message: string) => vo
     const compositeContext = compositeCanvas.getContext('2d');
 
     if (!compositeContext) {
-        throw new Error("Could not create composite canvas for PDF rendering.");
+        throw new Error('Could not create composite canvas for PDF rendering.');
     }
 
     compositeContext.fillStyle = 'white';
@@ -61,6 +65,6 @@ export const processPdf = async (file: File, onProgress: (message: string) => vo
     return {
         compositeImageB64: compositeDataUrl.split(',')[1],
         firstPagePreviewUrl,
-        mimeType: 'image/png'
+        mimeType: 'image/png',
     };
 };

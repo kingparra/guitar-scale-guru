@@ -1,14 +1,13 @@
-
 export interface Song {
-  title: string;
-  artist: string;
-  spotifyLink: string;
+    title: string;
+    artist: string;
+    spotifyLink: string;
 }
 
 export interface Tutorial {
-  title: string;
-  creator: string;
-  youtubeLink: string;
+    title: string;
+    creator: string;
+    youtubeLink: string;
 }
 
 export interface CreativeVideo {
@@ -31,7 +30,7 @@ export interface ToneSuggestion {
 // New types for robust, structured tablature data
 export interface TabNote {
     string: number; // 0 for high E, 6 for low B
-    fret: string;   // e.g., '5', '12', '5h7', '12b14', 'x', '|'
+    fret: string; // e.g., '5', '12', '5h7', '12b14', 'x', '|'
 }
 
 export type TabColumn = TabNote[];
@@ -51,6 +50,7 @@ export interface ChordDiagramData {
 export interface Chord {
     name: string;
     diagramData: ChordDiagramData;
+    degree: string; // Now mandatory for the color-coded pill display
 }
 
 export interface ChordProgression {
@@ -70,13 +70,24 @@ export interface Lick {
 export interface HarmonizationExercise {
     name: string;
     description: string;
-    tab: StructuredTab;
+    tab?: StructuredTab; // Tab is optional as it's generated client-side
 }
 
 export interface Etude {
     name: string;
     description: string;
     tab: StructuredTab;
+}
+
+// Polymorphic base type for all tabbed practice materials
+export type PracticeMaterial = Lick | HarmonizationExercise | Etude;
+
+// Polymorphic type for unified resource list rendering
+export interface DisplayResource {
+    title: string;
+    creator: string;
+    link: string;
+    type: 'spotify' | 'youtube' | 'jam' | 'creative';
 }
 
 export interface ModeInfo {
@@ -86,21 +97,22 @@ export interface ModeInfo {
 }
 
 /**
- * Represents a single note to be displayed on a fretboard diagram.
- * For chords, `noteName` and `degree` may be undefined.
+ * Represents a single note on a fretboard diagram.
  */
 export interface DiagramNote {
     string: number;
     fret: number;
     noteName?: string;
     degree?: string;
+    finger?: string;
 }
 
 export type PathDiagramNote = DiagramNote & { finger: string };
 
-export type FingeringEntry = { key: string; finger: string; };
+export type FingeringEntry = { key: string; finger: string };
 export type FingeringMap = FingeringEntry[];
 
+// This now represents the 100% client-generated diagram data
 export interface DiagramData {
     tonicChordDegrees: string[];
     characteristicDegrees: string[];
@@ -113,13 +125,21 @@ export interface DiagramData {
     diagonalRun: PathDiagramNote[];
 }
 
-// Updated ScaleDetails to support progressive loading by making all properties optional.
+// Minimal data needed to start client-side generation
+export interface ScaleNotesData {
+    scaleNotes: { noteName: string; degree: string }[];
+}
+
+// Updated ScaleDetails to support progressive loading
 export interface ScaleDetails {
+    // Generated instantly on the client
+    diagramData?: DiagramData;
+    // Fetched asynchronously from AI
     overview?: {
         title: string;
         character: string;
         theory: string;
-        usage: string;
+        usage:string;
         degreeExplanation: string;
     };
     listeningGuide?: Song[];
@@ -138,16 +158,18 @@ export interface ScaleDetails {
     advancedHarmonization?: HarmonizationExercise[];
     etudes?: Etude[];
     modeSpotlight?: ModeInfo;
-    diagramData?: DiagramData;
 }
 
 export interface FretboardDiagramProps {
     title: string;
-    scaleData: DiagramData;
+    notesToRender: DiagramNote[];
+    tonicChordDegrees: string[];
+    characteristicDegrees: string[];
     fretRange: [number, number];
-    fingeringMap?: FingeringMap;
     diagonalRun?: PathDiagramNote[];
+    barres?: ChordDiagramData['barres'];
     fontScale: number;
+    numStrings?: number;
 }
 
 export interface FretboardNoteProps {
@@ -160,10 +182,9 @@ export interface FretboardNoteProps {
     isCharacteristic: boolean;
     isInRun?: boolean;
     runNotesLookup?: Set<string>;
-    finger?: string;
     sequenceNumber?: number;
+    finger?: string;
 }
-
 
 export interface SongAnalysisResult {
     rootNote: string;

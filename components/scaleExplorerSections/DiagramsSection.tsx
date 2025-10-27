@@ -1,70 +1,131 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import FretboardDiagram from '../FretboardDiagram';
-import type { ScaleDetails, FontSizeKey } from '../../types';
-import { FONT_SIZES } from '../../constants';
-import { NUM_FRETS } from '../../constants';
+import type {
+    ScaleDetails,
+    FontSizeKey,
+    DiagramNote,
+    FingeringMap,
+} from '../../types';
+import { FONT_SIZES, NUM_FRETS } from '../../constants';
 import { calculatePlayableFretRange } from '../../utils/diagramUtils';
+import DiagramLegend from '../common/DiagramLegend';
 
 interface DiagramsSectionProps {
-    title: string;
     diagramData: ScaleDetails['diagramData'];
     fontSize: FontSizeKey;
 }
 
-const DiagramsSection: React.FC<DiagramsSectionProps> = ({ title, diagramData, fontSize }) => {
-    const fontScaleValue = parseFloat(FONT_SIZES[fontSize].replace('rem', ''));
+const prepareNotesForPosition = (
+    positionMap: FingeringMap,
+    notesOnFretboard: DiagramNote[]
+): DiagramNote[] => {
+    const masterNotesMap = new Map(
+        notesOnFretboard.map((n) => [`${n.string}_${n.fret}`, n])
+    );
 
-    // Dynamically calculate the range for each position using the centralized helper
-    const pos1Range = calculatePlayableFretRange(diagramData.fingering.pos1);
-    const pos2Range = calculatePlayableFretRange(diagramData.fingering.pos2);
-    const pos3Range = calculatePlayableFretRange(diagramData.fingering.pos3);
-    
-    return (
-        <section>
-            <h2 className="text-3xl font-bold mb-4 border-l-4 border-purple-400/50 pl-4 text-gray-100">Diagrams</h2>
-            <FretboardDiagram
-                title={`${title}: Full Neck`}
-                scaleData={diagramData}
-                fretRange={[0, NUM_FRETS]}
-                fontScale={fontScaleValue * 0.9}
-            />
-            
-            {diagramData.diagonalRun && diagramData.diagonalRun.length > 0 && (
+    return positionMap.map((posEntry) => {
+        const masterNote = masterNotesMap.get(posEntry.key);
+        const [string, fret] = posEntry.key.split('_').map(Number);
+
+        if (masterNote && typeof masterNote === 'object') {
+            return { ...masterNote, finger: posEntry.finger };
+        } else {
+            return { string, fret, finger: posEntry.finger };
+        }
+    });
+};
+
+const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
+    ({ diagramData, fontSize }) => {
+        const fontScaleValue = parseFloat(
+            FONT_SIZES[fontSize].replace('rem', '')
+        );
+
+        const {
+            notesOnFretboard,
+            fingering,
+            diagonalRun,
+            tonicChordDegrees,
+            characteristicDegrees,
+        } = diagramData;
+
+        const pos1Notes = useMemo(
+            () => prepareNotesForPosition(fingering.pos1, notesOnFretboard),
+            [fingering.pos1, notesOnFretboard]
+        );
+        const pos2Notes = useMemo(
+            () => prepareNotesForPosition(fingering.pos2, notesOnFretboard),
+            [fingering.pos2, notesOnFretboard]
+        );
+        const pos3Notes = useMemo(
+            () => prepareNotesForPosition(fingering.pos3, notesOnFretboard),
+            [fingering.pos3, notesOnFretboard]
+        );
+
+        const pos1Range = calculatePlayableFretRange(fingering.pos1);
+        const pos2Range = calculatePlayableFretRange(fingering.pos2);
+        const pos3Range = calculatePlayableFretRange(fingering.pos3);
+
+        const rootNoteName =
+            notesOnFretboard.find((n) => n.degree === 'R')?.noteName ||
+            notesOnFretboard[0]?.noteName;
+        const fullNeckTitle = rootNoteName
+            ? `${rootNoteName} Scale: Full Neck`
+            : 'Full Neck Diagram';
+
+        return (
+            <>
+                <DiagramLegend />
                 <FretboardDiagram
-                    title={`${title}: Ascending Diagonal Run`}
-                    scaleData={diagramData}
+                    title={fullNeckTitle}
+                    notesToRender={notesOnFretboard}
+                    tonicChordDegrees={tonicChordDegrees}
+                    characteristicDegrees={characteristicDegrees}
                     fretRange={[0, NUM_FRETS]}
-                    diagonalRun={diagramData.diagonalRun}
                     fontScale={fontScaleValue * 0.9}
                 />
-            )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-                <FretboardDiagram
-                    title="Position 1"
-                    scaleData={diagramData}
-                    fretRange={pos1Range}
-                    fingeringMap={diagramData.fingering.pos1}
-                    fontScale={fontScaleValue}
-                />
-                <FretboardDiagram
-                    title="Position 2"
-                    scaleData={diagramData}
-                    fretRange={pos2Range}
-                    fingeringMap={diagramData.fingering.pos2}
-                    fontScale={fontScaleValue}
-                />
-                <FretboardDiagram
-                    title="Position 3"
-                    scaleData={diagramData}
-                    fretRange={pos3Range}
-                    fingeringMap={diagramData.fingering.pos3}
-                    fontScale={fontScaleValue}
-                />
-            </div>
-        </section>
-    );
-};
+                {diagonalRun && diagonalRun.length > 0 && (
+                    <FretboardDiagram
+                        title={`Ascending Diagonal Run`}
+                        notesToRender={notesOnFretboard}
+                        tonicChordDegrees={tonicChordDegrees}
+                        characteristicDegrees={characteristicDegrees}
+                        fretRange={[0, NUM_FRETS]}
+                        diagonalRun={diagonalRun}
+                        fontScale={fontScaleValue * 0.9}
+                    />
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+                    <FretboardDiagram
+                        title="Position 1"
+                        notesToRender={pos1Notes}
+                        tonicChordDegrees={tonicChordDegrees}
+                        characteristicDegrees={characteristicDegrees}
+                        fretRange={pos1Range}
+                        fontScale={fontScaleValue}
+                    />
+                    <FretboardDiagram
+                        title="Position 2"
+                        notesToRender={pos2Notes}
+                        tonicChordDegrees={tonicChordDegrees}
+                        characteristicDegrees={characteristicDegrees}
+                        fretRange={pos2Range}
+                        fontScale={fontScaleValue}
+                    />
+                    <FretboardDiagram
+                        title="Position 3"
+                        notesToRender={pos3Notes}
+                        tonicChordDegrees={tonicChordDegrees}
+                        characteristicDegrees={characteristicDegrees}
+                        fretRange={pos3Range}
+                        fontScale={fontScaleValue}
+                    />
+                </div>
+            </>
+        );
+    }
+);
 
 export default DiagramsSection;

@@ -1,9 +1,19 @@
-
 import { useState, useCallback, useRef } from 'react';
-import { generateCoreMaterials, generateResources, generatePractice } from '../services/geminiService';
-import type { ScaleDetails } from '../types';
+import {
+    generateOverview,
+    generateResources,
+    generatePractice,
+} from '../services/geminiService';
+import type { ScaleDetails, DiagramData } from '../types';
+import {
+    generateScaleNotesFromFormula,
+    getDiagramMetadataFromScaleNotes,
+    generateNotesOnFretboard,
+    generateFingeringPositions,
+    generateDiagonalRun,
+    generateHarmonizationTab,
+} from '../utils/guitarUtils';
 
-// Cache is now managed by the hook that orchestrates the full data generation.
 const scaleCache = new Map<string, ScaleDetails>();
 
 export const useScaleGenerator = () => {
@@ -12,56 +22,90 @@ export const useScaleGenerator = () => {
     const [scaleDetails, setScaleDetails] = useState<ScaleDetails | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
-    // Use a ref to track the current generation request to prevent race conditions
+
     const generationIdRef = useRef(0);
 
     const generate = useCallback(async (note: string, scale: string) => {
         const cacheKey = `${note}_${scale}`;
         if (scaleCache.has(cacheKey)) {
-            console.log("Returning cached data for", cacheKey);
             setScaleDetails(scaleCache.get(cacheKey)!);
             return;
         }
 
         const currentGenerationId = ++generationIdRef.current;
-
         setIsLoading(true);
         setError(null);
-        setScaleDetails(null); // Clear previous results immediately
+        setScaleDetails(null);
 
         try {
-            // Step 1: Fetch core materials (overview and diagrams)
-            const coreData = await generateCoreMaterials(note, scale);
-            if (generationIdRef.current !== currentGenerationId) return; // A new request has started
-            setScaleDetails(coreData);
-
-            // Step 2: Fetch resources (links, tone, etc.)
-            const resourceData = await generateResources(note, scale);
-            if (generationIdRef.current !== currentGenerationId) return;
-            setScaleDetails(prev => ({ ...prev, ...resourceData }));
-
-            // Step 3: Fetch practice materials (chords, licks, etc.)
-            const practiceData = await generatePractice(note, scale);
-            if (generationIdRef.current !== currentGenerationId) return;
-
-            // Final update and cache the complete object
-            let finalDetails: ScaleDetails | null = null;
-            setScaleDetails(prev => {
-                // The previous state 'prev' might be null if the request was very fast
-                // or if a part of it was cancelled. We combine all fetched parts.
-                finalDetails = { ...coreData, ...resourceData, ...practiceData };
-                return finalDetails;
-            });
-
-            if (finalDetails) {
-                 scaleCache.set(cacheKey, finalDetails);
+            // Step 1: INSTANTLY generate all diagram data on the client.
+            const scaleNotes = generateScaleNotesFromFormula(note, scale);
+            if (!scaleNotes) {
+                throw new Error(`Scale formula for "${scale}" not found.`);
             }
 
-        } catch (err: any) {
+            const { tonicChordDegrees, characteristicDegrees } =
+                getDiagramMetadataFromScaleNotes(scaleNotes);
+            const notesOnFretboard = generateNotesOnFretboard(scaleNotes);
+            const fingering = generateFingeringPositions(notesOnFretboard);
+            const diagonalRun = generateDiagonalRun(notesOnFretboard);
+
+            const clientGeneratedDiagramData: DiagramData = {
+                notesOnFretboard,
+                fingering,
+                diagonalRun,
+                tonicChordDegrees,
+                characteristicDegrees,
+            };
+
+            // Step 2: IMMEDIATE state update. Diagrams appear instantly.
+            const initialDetails: ScaleDetails = {
+                diagramData: clientGeneratedDiagramData,
+            };
+            setScaleDetails(initialDetails);
+
+            // Step 3: Fetch all remaining AI-dependent text content in parallel.
+            const [overviewData, resourceData, practiceData] =
+                await Promise.all([
+                    generateOverview(note, scale),
+                    generateResources(note, scale),
+                    generatePractice(note, scale),
+                ]);
+
+            if (generationIdRef.current !== currentGenerationId) return;
+
+            // Step 4: Process and merge the parallel results.
+            if (practiceData.advancedHarmonization) {
+                practiceData.advancedHarmonization.forEach((ex) => {
+                    const interval = ex.description
+                        .toLowerCase()
+                        .includes('third')
+                        ? 2
+                        : 5;
+                    ex.tab = generateHarmonizationTab(
+                        fingering,
+                        scaleNotes,
+                        interval
+                    );
+                });
+            }
+
+            // Final state update with all data merged.
+            const finalDetails: ScaleDetails = {
+                ...initialDetails,
+                ...overviewData,
+                ...resourceData,
+                ...practiceData,
+            };
+
+            setScaleDetails(finalDetails);
+            scaleCache.set(cacheKey, finalDetails);
+        } catch (e: unknown) {
             if (generationIdRef.current === currentGenerationId) {
-                setError(err.message || 'An unknown error occurred.');
-                setScaleDetails(null); // Clear partial results on error
+                const message =
+                    e instanceof Error ? e.message : 'An unknown error occurred';
+                setError(message);
+                setScaleDetails(null);
             }
         } finally {
             if (generationIdRef.current === currentGenerationId) {

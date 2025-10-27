@@ -10,15 +10,19 @@ interface AnalysisPayload {
 }
 
 export const useNotationAnalyzer = () => {
-    const [analysisResults, setAnalysisResults] = useState<SongAnalysisResult[] | null>(null);
+    const [analysisResults, setAnalysisResults] = useState<
+        SongAnalysisResult[] | null
+    >(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isProcessingFile, setIsProcessingFile] = useState(false);
-    const [processingMessage, setProcessingMessage] = useState('Processing file...');
-    
-    const [analysisPayload, setAnalysisPayload] = useState<AnalysisPayload | null>(null);
+    const [processingMessage, setProcessingMessage] =
+        useState('Processing file...');
+
+    const [analysisPayload, setAnalysisPayload] =
+        useState<AnalysisPayload | null>(null);
 
     const handleFileChange = useCallback(async (file: File | null) => {
         if (!file) return;
@@ -32,7 +36,11 @@ export const useNotationAnalyzer = () => {
 
         try {
             if (file.type === 'application/pdf') {
-                const { compositeImageB64, firstPagePreviewUrl, mimeType } = await processPdf(file, setProcessingMessage);
+                const {
+                    compositeImageB64,
+                    firstPagePreviewUrl,
+                    mimeType,
+                } = await processPdf(file, setProcessingMessage);
                 setImagePreview(firstPagePreviewUrl);
                 setAnalysisPayload({ data: compositeImageB64, mimeType });
             } else if (file.type.startsWith('image/')) {
@@ -41,10 +49,13 @@ export const useNotationAnalyzer = () => {
                 const base64Data = await fileToBase64(file);
                 setAnalysisPayload({ data: base64Data, mimeType: file.type });
             } else {
-                throw new Error("Unsupported file type. Please upload a PDF or an image file (PNG, JPG).");
+                throw new Error(
+                    'Unsupported file type. Please upload a PDF or an image file (PNG, JPG).'
+                );
             }
-        } catch (err: any) {
-            setError(`Failed to process file: ${err.message}`);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'An unknown error occurred';
+            setError(`Failed to process file: ${message}`);
             setImagePreview(null);
         } finally {
             setIsProcessingFile(false);
@@ -53,7 +64,7 @@ export const useNotationAnalyzer = () => {
 
     const analyze = useCallback(async () => {
         if (!analysisPayload) {
-            setError("Please select and process a file first.");
+            setError('Please select and process a file first.');
             return;
         }
         setIsAnalyzing(true);
@@ -63,8 +74,9 @@ export const useNotationAnalyzer = () => {
             const { data, mimeType } = analysisPayload;
             const results = await analyzeMusicNotationImage(data, mimeType);
             setAnalysisResults(results);
-        } catch (err: any) {
-            setError(err.message || 'An unknown error occurred during analysis.');
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'An unknown error occurred';
+            setError(message);
         } finally {
             setIsAnalyzing(false);
         }
@@ -79,6 +91,6 @@ export const useNotationAnalyzer = () => {
         imagePreview,
         isProcessingFile,
         processingMessage,
-        canAnalyze: !!analysisPayload
+        canAnalyze: !!analysisPayload,
     };
 };

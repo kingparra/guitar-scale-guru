@@ -1,28 +1,83 @@
 {
-  "name": "guitar-scale-guru",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@google/genai": "^1.27.0",
-    "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1",
-    "pdfjs-dist": "4.4.168",
-    "@testing-library/react": "^16.3.0",
-    "@jest/globals": "^30.2.0",
-    "@testing-library/jest-dom": "^6.9.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
-  }
+    "name": "guitar-scale-guru",
+    "version": "1.0.0",
+    "description": "An AI-powered, seven-string guitar scale generator.",
+    "main": "index.tsx",
+    "scripts": {
+        "lint": "eslint . --ext .ts,.tsx",
+        "test": "jest",
+        "prepare": "husky"
+    },
+    "devDependencies": {
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.0",
+        "@types/jest": "^29.5.12",
+        "@types/react": "^18.3.3",
+        "@typescript-eslint/eslint-plugin": "^7.13.1",
+        "@typescript-eslint/parser": "^7.13.1",
+        "eslint": "^8.57.0",
+        "eslint-plugin-jsx-a11y": "^6.9.0",
+        "eslint-plugin-react": "^7.34.2",
+        "eslint-plugin-react-hooks": "^4.6.2",
+        "husky": "^9.0.11",
+        "jest": "^29.7.0",
+        "jest-environment-jsdom": "^29.7.0",
+        "lint-staged": "^15.2.7",
+        "prettier": "^3.3.2",
+        "ts-jest": "^29.1.5",
+        "typescript": "^5.4.5"
+    },
+    "prettier": {
+        "semi": true,
+        "trailingComma": "es5",
+        "singleQuote": true,
+        "printWidth": 80,
+        "tabWidth": 4
+    },
+    "eslintConfig": {
+        "root": true,
+        "parser": "@typescript-eslint/parser",
+        "plugins": [
+            "@typescript-eslint",
+            "react",
+            "react-hooks",
+            "jsx-a11y"
+        ],
+        "extends": [
+            "eslint:recommended",
+            "plugin:@typescript-eslint/recommended",
+            "plugin:react/recommended",
+            "plugin:react-hooks/recommended",
+            "plugin:jsx-a11y/recommended"
+        ],
+        "settings": {
+            "react": {
+                "version": "detect"
+            }
+        },
+        "rules": {
+            "react/react-in-jsx-scope": "off",
+            "react/prop-types": "off",
+            "@typescript-eslint/no-explicit-any": "warn",
+            "no-console": "warn"
+        },
+        "env": {
+            "browser": true,
+            "node": true
+        }
+    },
+    "jest": {
+        "testEnvironment": "jsdom",
+        "roots": [
+            "<rootDir>"
+        ],
+        "transform": {
+            "^.+\\.(ts|tsx)$": "ts-jest"
+        }
+    },
+    "lint-staged": {
+        "*.{ts,tsx}": [
+            "eslint --fix"
+        ]
+    }
 }

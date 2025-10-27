@@ -8,13 +8,17 @@ export const renderStructuredTab = (tab: StructuredTab) => {
     }
 
     // Initialize string lines with tuning, padded for alignment
-    const strings = Array.from({ length: 7 }, (_, i) => TUNING[i].padEnd(2, ' ') + '|');
+    const strings = Array.from(
+        { length: 7 },
+        (_, i) => TUNING[i].padEnd(2, ' ') + '|'
+    );
 
     for (const column of tab.columns) {
         // Handle bar lines
-        const isBarLine = column.length > 0 && column.every(note => note.fret === '|');
+        const isBarLine =
+            column.length > 0 && column.every((note) => note.fret === '|');
         if (isBarLine) {
-            strings.forEach((_, i) => strings[i] += '|');
+            strings.forEach((_, i) => (strings[i] += '|'));
             continue;
         }
 
@@ -36,9 +40,9 @@ export const renderStructuredTab = (tab: StructuredTab) => {
             strings[i] += `${padding}${fret}-`;
         }
     }
-    
+
     // Add final bar line
-    strings.forEach((_, i) => strings[i] += '|');
+    strings.forEach((_, i) => (strings[i] += '|'));
 
     return (
         <pre
@@ -50,7 +54,6 @@ export const renderStructuredTab = (tab: StructuredTab) => {
     );
 };
 
-
 export const renderMarkdownTable = (markdownString: string) => {
     if (!markdownString || !markdownString.includes('|')) {
         return <p>{markdownString}</p>;
@@ -60,14 +63,25 @@ export const renderMarkdownTable = (markdownString: string) => {
         const headerRow = rows[0];
         const dataRows = rows.slice(2);
 
-        const headers = headerRow.split('|').map(h => h.trim()).filter(Boolean);
+        const headers = headerRow
+            .split('|')
+            .map((h) => h.trim())
+            .filter(Boolean);
         const body = dataRows.map((row, rowIndex) => {
-            const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+            const cells = row
+                .split('|')
+                .map((c) => c.trim())
+                .filter(Boolean);
             return (
                 <tr key={rowIndex} className="hover:bg-purple-500/10">
-                    {cells.map((cell, cellIndex) =>
-                        <td key={cellIndex} className="py-2 px-4 border-b border-purple-400/20">{cell}</td>
-                    )}
+                    {cells.map((cell, cellIndex) => (
+                        <td
+                            key={cellIndex}
+                            className="py-2 px-4 border-b border-purple-400/20"
+                        >
+                            {cell}
+                        </td>
+                    ))}
                 </tr>
             );
         });
@@ -77,19 +91,22 @@ export const renderMarkdownTable = (markdownString: string) => {
                 <table className="w-full text-left">
                     <thead className="bg-[#0D0B1A]/70">
                         <tr>
-                            {headers.map((header, index) =>
-                                <th key={index} className="py-2 px-4 text-cyan-400 uppercase tracking-wider font-semibold text-sm border-b-2 border-purple-400/40">{header}</th>
-                            )}
+                            {headers.map((header, index) => (
+                                <th
+                                    key={index}
+                                    className="py-2 px-4 text-cyan-400 uppercase tracking-wider font-semibold text-sm border-b-2 border-purple-400/40"
+                                >
+                                    {header}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
-                    <tbody>
-                        {body}
-                    </tbody>
+                    <tbody>{body}</tbody>
                 </table>
             </div>
         );
-    } catch (e) {
-        console.error("Failed to parse markdown table:", e);
+    } catch (e: unknown) {
+        console.error('Failed to parse markdown table:', e);
         return <pre className="whitespace-pre-wrap">{markdownString}</pre>; // Fallback to preformatted text
     }
 };

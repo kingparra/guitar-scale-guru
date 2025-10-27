@@ -5,8 +5,8 @@ export const fileToBase64 = (file: File): Promise<string> => {
         reader.onload = () => {
             const result = reader.result as string;
             // remove the "data:*/*;base64," prefix
-            resolve(result.split(',')[1]); 
+            resolve(result.split(',')[1]);
         };
-        reader.onerror = error => reject(error);
+        reader.onerror = (error) => reject(error);
     });
 };
