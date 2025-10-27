@@ -49,8 +49,8 @@ export interface ChordDiagramData {
 
 export interface Chord {
     name: string;
-    diagramData: ChordDiagramData;
-    degree: string; // Now mandatory for the color-coded pill display
+    diagramData?: ChordDiagramData; // Optional: will be generated client-side
+    degree: string; // Mandatory for lookup and display
 }
 
 export interface ChordProgression {
@@ -117,11 +117,7 @@ export interface DiagramData {
     tonicChordDegrees: string[];
     characteristicDegrees: string[];
     notesOnFretboard: DiagramNote[];
-    fingering: {
-        pos1: FingeringMap;
-        pos2: FingeringMap;
-        pos3: FingeringMap;
-    };
+    fingering: FingeringMap[];
     diagonalRun: PathDiagramNote[];
 }
 
@@ -134,13 +130,13 @@ export interface ScaleNotesData {
 export interface ScaleDetails {
     // Generated instantly on the client
     diagramData?: DiagramData;
+    degreeExplanation?: string; // Now also generated on client
     // Fetched asynchronously from AI
     overview?: {
         title: string;
         character: string;
         theory: string;
         usage:string;
-        degreeExplanation: string;
     };
     listeningGuide?: Song[];
     youtubeTutorials?: Tutorial[];

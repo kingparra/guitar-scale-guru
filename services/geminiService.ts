@@ -110,57 +110,17 @@ const structuredTabSchema = {
     required: ['columns'],
 };
 
-const chordDiagramDataSchema = {
-    type: Type.OBJECT,
-    properties: {
-        frets: { type: Type.ARRAY, items: { type: Type.STRING } },
-        fingers: { type: Type.ARRAY, items: { type: Type.STRING } },
-        baseFret: { type: Type.NUMBER },
-        barres: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    fromString: { type: Type.NUMBER },
-                    toString: { type: Type.NUMBER },
-                    fret: { type: Type.NUMBER },
-                },
-                required: ['fromString', 'toString', 'fret'],
-            },
-        },
-    },
-    required: ['frets', 'fingers', 'baseFret', 'barres'],
-};
-
+// Simplified schema: AI provides only the degree, client generates the diagram.
 const chordSchema = {
     type: Type.OBJECT,
     properties: {
         name: { type: Type.STRING },
-        diagramData: chordDiagramDataSchema,
         degree: { type: Type.STRING },
     },
-    required: ['name', 'diagramData', 'degree'],
+    required: ['name', 'degree'],
 };
 
 // Schemas for Progressive Loading
-const scaleNotesSchema = {
-    type: Type.OBJECT,
-    properties: {
-        scaleNotes: {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    noteName: { type: Type.STRING },
-                    degree: { type: Type.STRING },
-                },
-                required: ['noteName', 'degree'],
-            },
-        },
-    },
-    required: ['scaleNotes'],
-};
-
 const overviewSchema = {
     type: Type.OBJECT,
     properties: {
@@ -171,15 +131,8 @@ const overviewSchema = {
                 character: { type: Type.STRING },
                 theory: { type: Type.STRING },
                 usage: { type: Type.STRING },
-                degreeExplanation: { type: Type.STRING },
             },
-            required: [
-                'title',
-                'character',
-                'theory',
-                'usage',
-                'degreeExplanation',
-            ],
+            required: ['title', 'character', 'theory', 'usage'],
         },
     },
     required: ['overview'],
@@ -372,15 +325,6 @@ const generateContent = async (
         throw new Error(errorMessage);
     }
 };
-
-// DEPRECATED in favor of client-side generation
-// export const generateScaleNotes = async (
-//     rootNote: string,
-//     scaleName: string
-// ): Promise<ScaleNotesData> => {
-//     const prompt = getScaleNotesPrompt(rootNote, scaleName);
-//     return generateContent(prompt, scaleNotesSchema, 'scale notes');
-// };
 
 export const generateOverview = async (
     rootNote: string,

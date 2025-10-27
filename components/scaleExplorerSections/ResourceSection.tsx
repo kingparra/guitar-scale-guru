@@ -54,63 +54,67 @@ const ResourceList: React.FC<{
     </div>
 );
 
-// Adapter functions to map raw data to the polymorphic DisplayResource type
-const adaptSongs = (songs: ScaleDetails['listeningGuide']): DisplayResource[] =>
-    songs?.map((s) => ({
-        title: s.title,
-        creator: s.artist,
-        link: s.spotifyLink,
-        type: 'spotify',
-    })) || [];
-const adaptTutorials = (
-    tutorials: ScaleDetails['youtubeTutorials']
-): DisplayResource[] =>
-    tutorials?.map((t) => ({
-        title: t.title,
-        creator: t.creator,
-        link: t.youtubeLink,
-        type: 'youtube',
-    })) || [];
-const adaptCreative = (
-    videos: ScaleDetails['creativeApplication']
-): DisplayResource[] =>
-    videos?.map((v) => ({
-        title: v.title,
-        creator: v.creator,
-        link: v.youtubeLink,
-        type: 'creative',
-    })) || [];
-const adaptJamTracks = (
-    tracks: ScaleDetails['jamTracks']
-): DisplayResource[] =>
-    tracks?.map((t) => ({
-        title: t.title,
-        creator: t.creator,
-        link: t.youtubeLink,
-        type: 'jam',
-    })) || [];
-
 const ResourceSection: React.FC<ResourceSectionProps> = React.memo(
     ({ scaleDetails }) => {
-        const resources = useMemo(
-            () => [
-                ...adaptSongs(scaleDetails.listeningGuide),
-                ...adaptTutorials(scaleDetails.youtubeTutorials),
-                ...adaptCreative(scaleDetails.creativeApplication),
-                ...adaptJamTracks(scaleDetails.jamTracks),
-            ],
-            [
-                scaleDetails.listeningGuide,
-                scaleDetails.youtubeTutorials,
-                scaleDetails.creativeApplication,
-                scaleDetails.jamTracks,
-            ]
-        );
+        // Refactored to use a single, consolidated mapping logic
+        const resourcesByType = useMemo(() => {
+            const allResources: Record<string, DisplayResource[]> = {
+                spotify: [],
+                youtube: [],
+                creative: [],
+                jam: [],
+            };
 
-        const songs = resources.filter((r) => r.type === 'spotify');
-        const tutorials = resources.filter((r) => r.type === 'youtube');
-        const creative = resources.filter((r) => r.type === 'creative');
-        const jams = resources.filter((r) => r.type === 'jam');
+            scaleDetails.listeningGuide?.forEach((s) =>
+                allResources.spotify.push({
+                    title: s.title,
+                    creator: s.artist,
+                    link: s.spotifyLink,
+                    type: 'spotify',
+                })
+            );
+
+            scaleDetails.youtubeTutorials?.forEach((t) =>
+                allResources.youtube.push({
+                    title: t.title,
+                    creator: t.creator,
+                    link: t.youtubeLink,
+                    type: 'youtube',
+                })
+            );
+
+            scaleDetails.creativeApplication?.forEach((v) =>
+                allResources.creative.push({
+                    title: v.title,
+                    creator: v.creator,
+                    link: v.youtubeLink,
+                    type: 'creative',
+                })
+            );
+
+            scaleDetails.jamTracks?.forEach((t) =>
+                allResources.jam.push({
+                    title: t.title,
+                    creator: t.creator,
+                    link: t.youtubeLink,
+                    type: 'jam',
+                })
+            );
+
+            return allResources;
+        }, [
+            scaleDetails.listeningGuide,
+            scaleDetails.youtubeTutorials,
+            scaleDetails.creativeApplication,
+            scaleDetails.jamTracks,
+        ]);
+
+        const {
+            spotify: songs,
+            youtube: tutorials,
+            creative,
+            jam: jams,
+        } = resourcesByType;
 
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

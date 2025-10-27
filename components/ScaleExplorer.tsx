@@ -67,9 +67,12 @@ const ScaleExplorer: React.FC<ScaleExplorerProps> = ({
     return (
         <div className="space-y-12">
             {/* Overview - show placeholder if loading, show content if available */}
-            {hasAsyncContentStarted ? (
+            {hasAsyncContentStarted && scaleDetails.degreeExplanation ? (
                 <Section title="Overview">
-                    <OverviewSection overview={scaleDetails.overview!} />
+                    <OverviewSection
+                        overview={scaleDetails.overview!}
+                        degreeExplanation={scaleDetails.degreeExplanation}
+                    />
                 </Section>
             ) : (
                 isLoading && <SectionPlaceholder title="Overview" />

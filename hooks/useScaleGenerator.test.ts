@@ -41,7 +41,7 @@ const mockDiagramMetadata = {
 };
 const mockClientDiagramData: DiagramData = {
     notesOnFretboard: [{ string: 6, fret: 0, noteName: 'B', degree: '5' }],
-    fingering: { pos1: [], pos2: [], pos3: [] },
+    fingering: [],
     diagonalRun: [],
     tonicChordDegrees: mockDiagramMetadata.tonicChordDegrees,
     characteristicDegrees: mockDiagramMetadata.characteristicDegrees,

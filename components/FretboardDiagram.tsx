@@ -160,7 +160,8 @@ const SvgBarres: React.FC<{
     fretRange: [number, number];
     getX: (f: number) => number;
     getY: (s: number) => number;
-}> = React.memo(({ barres, fretRange, getX, getY }) => {
+    numStrings: number;
+}> = React.memo(({ barres, fretRange, getX, getY, numStrings }) => {
     if (!barres || barres.length === 0) return null;
     return (
         <g className="barres">
@@ -168,11 +169,11 @@ const SvgBarres: React.FC<{
                 if (barre.fret < fretRange[0] || barre.fret > fretRange[1])
                     return null;
 
-                // The AI provides barre data where string 0 is the low E.
+                // The AI provides barre data where string 0 is the low B string.
                 // Our diagram's y-coordinate system starts with string 0 at the top (high E).
-                // This logic maps the AI's 6-string convention to our diagram's coordinate space.
-                const fromStringDiagram = 5 - barre.fromString;
-                const toStringDiagram = 5 - barre.toString;
+                // This logic maps the AI's 7-string convention to our diagram's coordinate space.
+                const fromStringDiagram = (numStrings - 1) - barre.fromString;
+                const toStringDiagram = (numStrings - 1) - barre.toString;
 
                 return (
                     <line
@@ -273,6 +274,7 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({
                     fretRange={fretRange}
                     getX={getX}
                     getY={getY}
+                    numStrings={numStrings}
                 />
 
                 <g className="notes">

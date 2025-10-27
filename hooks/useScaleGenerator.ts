@@ -4,7 +4,7 @@ import {
     generateResources,
     generatePractice,
 } from '../services/geminiService';
-import type { ScaleDetails, DiagramData } from '../types';
+import type { ScaleDetails, DiagramData, Chord } from '../types';
 import {
     generateScaleNotesFromFormula,
     getDiagramMetadataFromScaleNotes,
@@ -12,6 +12,8 @@ import {
     generateFingeringPositions,
     generateDiagonalRun,
     generateHarmonizationTab,
+    generateDiatonicChords,
+    generateDegreeTableMarkdown,
 } from '../utils/guitarUtils';
 
 const scaleCache = new Map<string, ScaleDetails>();
@@ -38,7 +40,7 @@ export const useScaleGenerator = () => {
         setScaleDetails(null);
 
         try {
-            // Step 1: INSTANTLY generate all diagram data on the client.
+            // Step 1: INSTANTLY generate all diagram and theory data on the client.
             const scaleNotes = generateScaleNotesFromFormula(note, scale);
             if (!scaleNotes) {
                 throw new Error(`Scale formula for "${scale}" not found.`);
@@ -49,6 +51,8 @@ export const useScaleGenerator = () => {
             const notesOnFretboard = generateNotesOnFretboard(scaleNotes);
             const fingering = generateFingeringPositions(notesOnFretboard);
             const diagonalRun = generateDiagonalRun(notesOnFretboard);
+            const diatonicChordsMap = generateDiatonicChords(scaleNotes);
+            const degreeExplanation = generateDegreeTableMarkdown(scaleNotes);
 
             const clientGeneratedDiagramData: DiagramData = {
                 notesOnFretboard,
@@ -61,6 +65,7 @@ export const useScaleGenerator = () => {
             // Step 2: IMMEDIATE state update. Diagrams appear instantly.
             const initialDetails: ScaleDetails = {
                 diagramData: clientGeneratedDiagramData,
+                degreeExplanation: degreeExplanation,
             };
             setScaleDetails(initialDetails);
 
@@ -74,7 +79,18 @@ export const useScaleGenerator = () => {
 
             if (generationIdRef.current !== currentGenerationId) return;
 
-            // Step 4: Process and merge the parallel results.
+            // Step 4: Process and merge the parallel results, hydrating with client-side data.
+            if (practiceData.keyChords?.progressions) {
+                practiceData.keyChords.progressions.forEach((prog) => {
+                    prog.chords.forEach((chord: Chord) => {
+                        const clientChord = diatonicChordsMap.get(chord.degree);
+                        if (clientChord) {
+                            chord.diagramData = clientChord.diagramData;
+                        }
+                    });
+                });
+            }
+
             if (practiceData.advancedHarmonization) {
                 practiceData.advancedHarmonization.forEach((ex) => {
                     const interval = ex.description
@@ -97,6 +113,12 @@ export const useScaleGenerator = () => {
                 ...resourceData,
                 ...practiceData,
             };
+            // The overview from AI does not contain degreeExplanation, so we must preserve it
+            if (finalDetails.overview) {
+                (finalDetails as any).overview.degreeExplanation =
+                    degreeExplanation;
+            }
+
 
             setScaleDetails(finalDetails);
             scaleCache.set(cacheKey, finalDetails);

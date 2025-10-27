@@ -28,6 +28,8 @@ We adhere to a strict separation of concerns.
 
 -   **TypeScript**: For static type safety.
 -   **ESLint**: For identifying and fixing problems in code.
+    -   **`eslint-plugin-security`**: Performs data-flow analysis to find common security vulnerabilities.
+    -   **`eslint-plugin-sonarjs`**: Detects bugs and "code smells" like overly complex functions or duplicated logic.
 -   **Prettier**: For automated code formatting.
 -   **Jest & React Testing Library**: For unit and integration testing.
 -   **Husky & Lint-Staged**: For automating pre-commit checks.
@@ -51,7 +53,7 @@ npm install
 Implement your feature or bug fix.
 
 ### **Step 3: Commit**
-When you stage your files and run `git commit`, the pre-commit hook will automatically trigger. It will run `lint-staged`, which in turn will execute ESLint on all staged `.ts` and `.tsx` files.
+When you stage your files and run `git commit`, the pre-commit hook will automatically trigger. It will run `lint-staged`, which in turn will execute ESLint (including our advanced static analysis plugins) on all staged `.ts` and `.tsx` files.
 
 -   If the linter finds any errors, **the commit will be automatically aborted.**
 -   You must fix the reported errors and re-stage the files before you can successfully commit.
@@ -65,6 +67,20 @@ You can, and should, still run the linter and tests manually as you work to get 
 
 ---
 
-## 4. Continuous Integration (CI)
+## 4. UI & Visual QA Process
 
-In a standard repository hosted on a platform like GitHub, a CI pipeline would be configured to run `npm run lint` and `npm run test` on every push and pull request. This serves as a final, server-side quality gate, ensuring that the main branch always remains stable and bug-free.
+To prevent layout and styling bugs, the following checks are a mandatory part of the development process before committing new UI components or changes.
+
+### **Container-Aware Testing**
+When a component is designed, it must be tested within various container types. A common source of bugs is placing a component inside a flexbox or grid container that constrains its dimensions.
+-   **Rule:** Before committing, render your component inside a fixed-width container and a flex container to ensure it behaves as expected and does not collapse or become unreadably small.
+
+### **Responsive Design Checks**
+All UI changes must be verified across a range of viewport sizes, from mobile to widescreen desktop.
+-   Use your browser's developer tools to simulate different devices.
+-   Ensure that text remains readable, clickable elements have adequate spacing, and layouts reflow gracefully without horizontal overflow.
+
+### **Accessibility (a11y) Spot Checks**
+While we have automated `jsx-a11y` checks, a manual review is still necessary.
+-   Ensure all interactive elements can be navigated using the keyboard (`Tab` key).
+-   Confirm that images have appropriate `alt` text and that color contrast meets WCAG AA standards.

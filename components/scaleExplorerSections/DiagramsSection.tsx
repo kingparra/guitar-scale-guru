@@ -49,22 +49,12 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
             characteristicDegrees,
         } = diagramData;
 
-        const pos1Notes = useMemo(
-            () => prepareNotesForPosition(fingering.pos1, notesOnFretboard),
-            [fingering.pos1, notesOnFretboard]
-        );
-        const pos2Notes = useMemo(
-            () => prepareNotesForPosition(fingering.pos2, notesOnFretboard),
-            [fingering.pos2, notesOnFretboard]
-        );
-        const pos3Notes = useMemo(
-            () => prepareNotesForPosition(fingering.pos3, notesOnFretboard),
-            [fingering.pos3, notesOnFretboard]
-        );
-
-        const pos1Range = calculatePlayableFretRange(fingering.pos1);
-        const pos2Range = calculatePlayableFretRange(fingering.pos2);
-        const pos3Range = calculatePlayableFretRange(fingering.pos3);
+        const positionData = useMemo(() => {
+            return fingering.map((positionMap) => ({
+                notes: prepareNotesForPosition(positionMap, notesOnFretboard),
+                range: calculatePlayableFretRange(positionMap),
+            }));
+        }, [fingering, notesOnFretboard]);
 
         const rootNoteName =
             notesOnFretboard.find((n) => n.degree === 'R')?.noteName ||
@@ -98,30 +88,17 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
-                    <FretboardDiagram
-                        title="Position 1"
-                        notesToRender={pos1Notes}
-                        tonicChordDegrees={tonicChordDegrees}
-                        characteristicDegrees={characteristicDegrees}
-                        fretRange={pos1Range}
-                        fontScale={fontScaleValue}
-                    />
-                    <FretboardDiagram
-                        title="Position 2"
-                        notesToRender={pos2Notes}
-                        tonicChordDegrees={tonicChordDegrees}
-                        characteristicDegrees={characteristicDegrees}
-                        fretRange={pos2Range}
-                        fontScale={fontScaleValue}
-                    />
-                    <FretboardDiagram
-                        title="Position 3"
-                        notesToRender={pos3Notes}
-                        tonicChordDegrees={tonicChordDegrees}
-                        characteristicDegrees={characteristicDegrees}
-                        fretRange={pos3Range}
-                        fontScale={fontScaleValue}
-                    />
+                    {positionData.map((pos, index) => (
+                        <FretboardDiagram
+                            key={`position-${index + 1}`}
+                            title={`Position ${index + 1}`}
+                            notesToRender={pos.notes}
+                            tonicChordDegrees={tonicChordDegrees}
+                            characteristicDegrees={characteristicDegrees}
+                            fretRange={pos.range}
+                            fontScale={fontScaleValue}
+                        />
+                    ))}
                 </div>
             </>
         );

@@ -45,10 +45,14 @@ const App: React.FC = () => {
         scaleDetails
     );
 
+    const handleGenerate = async (note: string, scale: string) => {
+        await generate(note, scale);
+    };
+
     const handleGenerateFromAnalysis = (result: SongAnalysisResult) => {
         setRootNote(result.rootNote);
         setScaleName(result.scaleName);
-        generate(result.rootNote, result.scaleName);
+        handleGenerate(result.rootNote, result.scaleName);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -86,50 +90,51 @@ const App: React.FC = () => {
                     </p>
                 </header>
 
-                <ControlPanel
-                    rootNote={rootNote}
-                    scaleName={scaleName}
-                    setRootNote={setRootNote}
-                    setScaleName={setScaleName}
-                    onGenerate={() => generate(rootNote, scaleName)}
-                    onSavePdf={generatePdf}
-                    isLoading={isBusy}
-                    isSavingPdf={isSavingPdf}
-                    hasContent={isContentComplete}
-                    fontSize={fontSize}
-                    setFontSize={setFontSize}
-                />
-
-                <div className="content-area space-y-8 mt-8">
-                    {combinedError && (
-                        <div className="p-[2px] bg-gradient-to-br from-red-500/80 to-orange-500/80 rounded-2xl shadow-lg">
-                            <div className="bg-[#171528]/80 backdrop-blur-lg p-6 rounded-[14px]">
-                                <h3 className="font-bold text-lg mb-2 text-center text-red-300">
-                                    An Error Occurred
-                                </h3>
-                                <pre className="text-left whitespace-pre-wrap bg-black/20 p-3 rounded-md text-sm">
-                                    {combinedError}
-                                </pre>
-                            </div>
-                        </div>
-                    )}
-
-                    <NotationAnalyzer
-                        onAnalyze={analyze}
-                        isAnalyzing={isAnalyzing}
-                        results={analysisResults}
-                        onGenerateFromAnalysis={handleGenerateFromAnalysis}
-                        {...notationAnalyzerProps}
+                <main className="flex-1 min-w-0">
+                    <ControlPanel
+                        rootNote={rootNote}
+                        scaleName={scaleName}
+                        setRootNote={setRootNote}
+                        setScaleName={setScaleName}
+                        onGenerate={() => handleGenerate(rootNote, scaleName)}
+                        onSavePdf={generatePdf}
+                        isLoading={isBusy}
+                        isSavingPdf={isSavingPdf}
+                        hasContent={isContentComplete}
+                        fontSize={fontSize}
+                        setFontSize={setFontSize}
                     />
+                    <div className="content-area space-y-8 mt-8">
+                        {combinedError && (
+                            <div className="p-[2px] bg-gradient-to-br from-red-500/80 to-orange-500/80 rounded-2xl shadow-lg">
+                                <div className="bg-[#171528]/80 backdrop-blur-lg p-6 rounded-[14px]">
+                                    <h3 className="font-bold text-lg mb-2 text-center text-red-300">
+                                        An Error Occurred
+                                    </h3>
+                                    <pre className="text-left whitespace-pre-wrap bg-black/20 p-3 rounded-md text-sm">
+                                        {combinedError}
+                                    </pre>
+                                </div>
+                            </div>
+                        )}
 
-                    <div id="scale-content">
-                        <ScaleExplorer
-                            isLoading={isGenerating}
-                            scaleDetails={scaleDetails}
-                            fontSize={fontSize}
+                        <NotationAnalyzer
+                            onAnalyze={analyze}
+                            isAnalyzing={isAnalyzing}
+                            results={analysisResults}
+                            onGenerateFromAnalysis={handleGenerateFromAnalysis}
+                            {...notationAnalyzerProps}
                         />
+
+                        <div id="scale-content">
+                            <ScaleExplorer
+                                isLoading={isGenerating}
+                                scaleDetails={scaleDetails}
+                                fontSize={fontSize}
+                            />
+                        </div>
                     </div>
-                </div>
+                </main>
                 <Footer />
             </div>
 

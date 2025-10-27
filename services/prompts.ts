@@ -15,7 +15,7 @@ Return a single, valid JSON array that strictly adheres to the provided schema. 
 `;
 
 const commonPromptHeader = (rootNote: string, scaleName: string) => `
-### **Master Prompt for Generating Guitar Scale Materials (Version 11.0 - Full Client-Side Generation)**
+### **Master Prompt for Generating Guitar Scale Materials (Version 13.0 - Client-Side Chords)**
 
 **Request:** Generate a specific section of learning materials for the **${rootNote} ${scaleName}** scale on a seven-string guitar (tuned B E A D G B E, low to high).
 
@@ -26,7 +26,7 @@ const commonPromptHeader = (rootNote: string, scaleName: string) => `
 #### **1. Core Mission & Purpose**
 Your primary goal is to deliver musically useful, instantly readable guitar scale materials for a seven-string guitar. The content should be targeted at an intermediate to advanced player who wants both deep theoretical understanding and practical, challenging application material.
 
-**IMPORTANT CONTEXT:** The client application is now responsible for algorithmically generating ALL diagram data (scale notes, note positions, fingerings, runs, metadata) and ALL harmonization exercises. Your role is to provide the textual, creative, and theoretical content that the client cannot generate itself.
+**IMPORTANT CONTEXT:** The client application is now responsible for algorithmically generating ALL diagram data (scale notes, note positions, fingerings, runs, metadata), ALL harmonization exercises, and ALL chord diagrams. Your role is to provide the textual, creative, and theoretical content that the client cannot generate itself.
 
 ---
 #### **2. Structured Tablature (\`StructuredTab\`) Format**
@@ -37,11 +37,6 @@ All linear tablature (for licks, etudes) MUST be provided in the following struc
 *   **columns**: An array of columns, each representing a moment in time.
 *   **Column**: An array of \`TabNote\` objects played simultaneously.
 *   **Bar Lines**: Represent a bar line with a column where ALL 7 strings have a \`TabNote\` with \`fret: "|" \`.
-
----
-#### **3. Structured Chord Diagram (\`ChordDiagramData\`) Format**
-For chord progressions, you must provide data to render a standard 6-string chord diagram for each chord.
-*   **CRITICAL: For each chord, you must provide its roman numeral analysis in the "degree" field (e.g., "I", "V", "vi", "ii°").**
 `;
 
 // This prompt is now deprecated as scale notes are generated client-side.
@@ -61,7 +56,7 @@ Generate the JSON content for the 'overview' section. This is a text-only sectio
 
 1.  **overview**:
     *   **DO NOT** include \`scaleNotes\`. This is generated client-side.
-    *   **degreeExplanation**: The output MUST be a valid markdown table string (e.g., '| Degree | Interval |\\n|---|---|\\n| R | Root |').
+    *   **DO NOT** include \`degreeExplanation\`. This is generated client-side.
 
 ---
 **CRITICAL INSTRUCTION:** Generate only the requested 'overview' section as a single, complete JSON object.
@@ -92,7 +87,7 @@ Generate the JSON content for 'keyChords', 'licks', 'advancedHarmonization', 'et
 
 1.  **keyChords**:
     *   **diatonicQualities**: Single-line reference (e.g., \`i-ii°-III+-iv-V-VI-vii°\`).
-    *   **progressions**: Array of 2 ChordProgression objects. For each chord in a progression, you **MUST** provide its roman numeral analysis in the \`degree\` field (e.g., "I", "V", "vi").
+    *   **progressions**: Array of 2 ChordProgression objects. For each chord in a progression, you **MUST** provide its roman numeral analysis in the \`degree\` field (e.g., "I", "V", "vi"). **DO NOT** provide \`diagramData\`.
 
 2.  **licks:** (Array of 1-2 Lick objects)
     *   Create musically interesting licks demonstrating a key characteristic of the scale.

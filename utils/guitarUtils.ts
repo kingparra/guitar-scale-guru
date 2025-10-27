@@ -12,9 +12,68 @@ import type {
     PathDiagramNote,
     TabColumn,
     StructuredTab,
+    ChordDiagramData,
+    Chord,
 } from '../types';
 
 type ScaleNote = { noteName: string; degree: string };
+
+// New: Library of common 7-string chord voicings
+// Format: { frets: [low B, ..., high E], fingers: [...], baseFret: #, barres: [] }
+const CHORD_VOICINGS: Record<string, Partial<ChordDiagramData>[]> = {
+    major: [
+        {
+            frets: ['x', 0, 2, 2, 2, 0, 'x'],
+            fingers: ['', 0, 2, 3, 4, 0, ''],
+            baseFret: 1,
+            barres: [],
+        }, // A form
+        {
+            frets: ['x', 'x', 0, 2, 2, 1, 0],
+            fingers: ['', '', 0, 3, 4, 2, 0],
+            baseFret: 1,
+            barres: [],
+        }, // D form
+    ],
+    minor: [
+        {
+            frets: ['x', 0, 2, 2, 1, 0, 'x'],
+            fingers: ['', 0, 3, 4, 2, 0, ''],
+            baseFret: 1,
+            barres: [],
+        }, // Am form
+        {
+            frets: ['x', 'x', 0, 2, 3, 1, 'x'],
+            fingers: ['', '', 0, 2, 4, 1, ''],
+            baseFret: 1,
+            barres: [],
+        }, // Dm form
+    ],
+    diminished: [
+        {
+            frets: ['x', 1, 2, 0, 2, 'x', 'x'],
+            fingers: ['', 1, 2, 0, 3, '', ''],
+            baseFret: 1,
+            barres: [],
+        }, // C#dim form
+    ],
+    augmented: [
+        {
+            frets: ['x', 'x', 1, 0, 0, 'x', 'x'],
+            fingers: ['', '', 2, 1, 1, '', ''],
+            baseFret: 1,
+            barres: [],
+        }, // Caug form
+    ],
+    dominant: [
+        {
+            frets: ['x', 0, 2, 0, 2, 0, 'x'],
+            fingers: ['', 0, 2, 0, 3, 0, ''],
+            baseFret: 1,
+            barres: [],
+        }, // A7 form
+    ],
+};
 
 /**
  * Generates the fundamental notes of a scale using a predefined interval formula.
@@ -108,41 +167,52 @@ export const generateNotesOnFretboard = (
 
 export const generateFingeringPositions = (
     notesOnFretboard: DiagramNote[]
-): { pos1: FingeringMap; pos2: FingeringMap; pos3: FingeringMap } => {
+): FingeringMap[] => {
     const rootNotes = notesOnFretboard.filter((n) => n.degree === 'R');
-    const potentialPositions: FingeringMap[] = [];
+    // Using a Map for robust de-duplication based on content
+    const potentialPositions = new Map<string, FingeringMap>();
 
+    // No longer restricting root notes to lower strings to find all possible positions
     for (const root of rootNotes) {
-        if (root.string >= 4 && root.string < NUM_STRINGS) {
-            const startFret = root.fret <= 2 ? 1 : root.fret - 1;
-            const endFret = startFret + 4;
+        // Define a 5-fret window. If root is on fret 1 or 2, start from 1.
+        // Otherwise, start one fret behind the root to center it.
+        const startFret = root.fret <= 2 ? 1 : root.fret - 1;
+        const endFret = startFret + 4;
 
-            const positionNotes = notesOnFretboard.filter(
-                (n) => n.fret >= startFret && n.fret <= endFret && n.fret > 0
-            );
+        // Collect all notes within this window, excluding open strings for position definition
+        const positionNotes = notesOnFretboard.filter(
+            (n) => n.fret >= startFret && n.fret <= endFret && n.fret > 0
+        );
 
-            if (positionNotes.length > 5) {
-                const fingeringMap: FingeringMap = positionNotes.map((note) => {
-                    let finger = note.fret - startFret + 1;
-                    if (finger < 1) finger = 1;
-                    if (finger > 4) finger = 4;
-                    return {
-                        key: `${note.string}_${note.fret}`,
-                        finger: String(finger),
-                    };
-                });
-                if (
-                    !potentialPositions.some(
-                        (p) => JSON.stringify(p) === JSON.stringify(fingeringMap)
-                    )
-                ) {
-                    potentialPositions.push(fingeringMap);
-                }
+        // A position is valid if it has a minimum number of notes
+        if (positionNotes.length > 5) {
+            const fingeringMap: FingeringMap = positionNotes.map((note) => {
+                let finger = note.fret - startFret + 1;
+                // Clamp finger value between 1 and 4
+                if (finger < 1) finger = 1;
+                if (finger > 4) finger = 4;
+                return {
+                    key: `${note.string}_${note.fret}`,
+                    finger: String(finger),
+                };
+            });
+
+            // Use a sorted list of note keys as a canonical key for de-duplication
+            const canonicalKey = fingeringMap
+                .map((f) => f.key)
+                .sort()
+                .join(',');
+
+            if (!potentialPositions.has(canonicalKey)) {
+                potentialPositions.set(canonicalKey, fingeringMap);
             }
         }
     }
 
-    potentialPositions.sort((a, b) => {
+    const uniquePositions = Array.from(potentialPositions.values());
+
+    // Sort positions by their minimum fret number
+    uniquePositions.sort((a, b) => {
         const minFretA = Math.min(
             ...a.map((item) => parseInt(item.key.split('_')[1], 10))
         );
@@ -152,11 +222,17 @@ export const generateFingeringPositions = (
         return minFretA - minFretB;
     });
 
-    return {
-        pos1: potentialPositions[0] || [],
-        pos2: potentialPositions[1] || [],
-        pos3: potentialPositions[2] || [],
-    };
+    // Filter to positions that start at or before the 12th fret
+    const finalPositions = uniquePositions.filter((pos) => {
+        if (pos.length === 0) return false;
+        const minFret = Math.min(
+            ...pos.map((item) => parseInt(item.key.split('_')[1], 10))
+        );
+        return minFret <= 12;
+    });
+
+    // The user asked for "about 7". We will cap it at 7 to avoid overwhelming the UI.
+    return finalPositions.slice(0, 7);
 };
 
 export const generateDiagonalRun = (
@@ -199,22 +275,17 @@ export const generateDiagonalRun = (
 };
 
 /**
- * Generates a structured tab for a scale harmonization exercise, constrained to the playable notes
- * within the three main fingering positions. This ensures the tab is musically coherent and practical.
- * @param {object} fingering - An object containing the three main FingeringMap arrays.
- * @param {ScaleNote[]} scaleNotes - The ordered, fundamental notes of the scale.
- * @param {number} interval - The interval to harmonize by (e.g., 2 for thirds, 5 for sixths).
- * @returns {StructuredTab} The generated tablature object.
+ * Generates a structured tab for a scale harmonization exercise.
  */
 export const generateHarmonizationTab = (
-    fingering: { pos1: FingeringMap; pos2: FingeringMap; pos3: FingeringMap },
+    fingering: FingeringMap[],
     scaleNotes: ScaleNote[],
     interval: number
 ): StructuredTab => {
     const columns: TabColumn[] = [];
     if (scaleNotes.length < 2) return { columns };
 
-    const allPositions = [fingering.pos1, fingering.pos2, fingering.pos3];
+    const allPositions = fingering;
     const scaleNoteNameMap = new Map(
         scaleNotes.map((n, i) => [n.noteName, i])
     );
@@ -247,37 +318,103 @@ export const generateHarmonizationTab = (
 
             if (harmonyNote) {
                 columns.push([
-                    {
-                        string: rootNote.string,
-                        fret: String(rootNote.fret),
-                    },
+                    { string: rootNote.string, fret: String(rootNote.fret) },
                 ]);
                 columns.push([
-                    {
-                        string: harmonyNote.string,
-                        fret: String(harmonyNote.fret),
-                    },
+                    { string: harmonyNote.string, fret: String(harmonyNote.fret) },
                 ]);
             }
         }
         if (columns.length > 0) {
             columns.push(
-                Array.from({ length: NUM_STRINGS }, (_, i) => ({
-                    string: i,
-                    fret: '|',
-                }))
+                Array.from({ length: NUM_STRINGS }, (_, i) => ({ string: i, fret: '|' }))
             );
         }
     }
 
     if (columns[columns.length - 1]?.[0]?.fret !== '|') {
         columns.push(
-            Array.from({ length: NUM_STRINGS }, (_, i) => ({
-                string: i,
-                fret: '|',
-            }))
+            Array.from({ length: NUM_STRINGS }, (_, i) => ({ string: i, fret: '|' }))
         );
     }
 
     return { columns };
+};
+
+/**
+ * Algorithmically generates all diatonic chords for a given scale.
+ */
+export const generateDiatonicChords = (
+    scaleNotes: ScaleNote[]
+): Map<string, Chord> => {
+    const chords = new Map<string, Chord>();
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
+    for (let i = 0; i < scaleNotes.length; i++) {
+        const rootNote = scaleNotes[i];
+        const third = scaleNotes[(i + 2) % scaleNotes.length];
+        const fifth = scaleNotes[(i + 4) % scaleNotes.length];
+
+        const rootIndex = NOTE_MAP[rootNote.noteName];
+        const thirdIndex = NOTE_MAP[third.noteName];
+        const fifthIndex = NOTE_MAP[fifth.noteName];
+
+        const interval3 = (thirdIndex - rootIndex + 12) % 12;
+        const interval5 = (fifthIndex - rootIndex + 12) % 12;
+
+        let quality: keyof typeof CHORD_VOICINGS = 'major';
+        let degree = romanNumerals[i];
+
+        if (interval3 === 3 && interval5 === 7) {
+            quality = 'minor';
+            degree = degree.toLowerCase();
+        } else if (interval3 === 4 && interval5 === 7) {
+            quality = 'major';
+        } else if (interval3 === 3 && interval5 === 6) {
+            quality = 'diminished';
+            degree = `${degree.toLowerCase()}°`;
+        } else if (interval3 === 4 && interval5 === 8) {
+            quality = 'augmented';
+            degree = `${degree}+`;
+        }
+
+        const voicing = CHORD_VOICINGS[quality]?.[0] || CHORD_VOICINGS.major[0];
+        const rootFret = findFret(4, rootNote.noteName); // Find root on the A string
+
+        if (rootFret !== null && voicing) {
+            const transposedVoicing: ChordDiagramData = {
+                frets: voicing.frets!.map((f) => (typeof f === 'number' ? f + rootFret : f)),
+                fingers: voicing.fingers!,
+                baseFret: (voicing.baseFret || 1) + rootFret - 1,
+                barres: (voicing.barres || []).map(b => ({ ...b, fret: b.fret + rootFret })),
+            };
+
+            chords.set(degree, {
+                name: `${rootNote.noteName}${quality === 'major' ? '' : quality === 'minor' ? 'm' : 'dim'}`,
+                degree: degree,
+                diagramData: transposedVoicing,
+            });
+        }
+    }
+    return chords;
+};
+
+/**
+ * Finds the fret number for a given note on a given string.
+ */
+const findFret = (stringIndex: number, noteName: string): number | null => {
+    const openNoteIndex = NOTE_MAP[TUNING[stringIndex]];
+    const targetNoteIndex = NOTE_MAP[noteName];
+    if (openNoteIndex === undefined || targetNoteIndex === undefined) return null;
+    return (targetNoteIndex - openNoteIndex + 12) % 12;
+};
+
+/**
+ * Generates the markdown table for scale degrees.
+ */
+export const generateDegreeTableMarkdown = (scaleNotes: ScaleNote[]): string => {
+    const headers = '| Degree | Interval | Note |';
+    const separator = '|---|---|---|';
+    const rows = scaleNotes.map(n => `| ${n.degree} | ${n.degree} | ${n.noteName} |`).join('\n');
+    return `${headers}\n${separator}\n${rows}`;
 };

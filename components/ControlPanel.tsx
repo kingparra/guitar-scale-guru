@@ -1,6 +1,7 @@
 import React from 'react';
-import { FONT_SIZES } from '../constants';
+import { FONT_SIZES, ALL_NOTES, SCALE_FORMULAS } from '../constants';
 import type { FontSizeKey } from '../types';
+import SearchableSelect from './common/SearchableSelect';
 
 interface ControlPanelProps {
     rootNote: string;
@@ -15,6 +16,8 @@ interface ControlPanelProps {
     fontSize: FontSizeKey;
     setFontSize: (size: FontSizeKey) => void;
 }
+
+const scaleNames = Object.keys(SCALE_FORMULAS);
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
     rootNote,
@@ -33,66 +36,29 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="sticky top-4 z-10 bg-[#171528]/80 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-purple-400/30">
             <div className="flex flex-col md:flex-row items-center justify-center gap-4 flex-wrap">
                 {/* Root Note Selector */}
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                    <label
-                        htmlFor="root-note"
-                        className="font-bold text-lg text-gray-300"
-                    >
+                <div className="flex items-center gap-2 w-full md:w-auto z-30">
+                    <label className="font-bold text-lg text-gray-300">
                         Root:
                     </label>
-                    <select
-                        id="root-note"
+                    <SearchableSelect
+                        options={ALL_NOTES}
                         value={rootNote}
-                        onChange={(e) => setRootNote(e.target.value)}
+                        onChange={setRootNote}
                         disabled={isLoading}
-                        className="bg-[#171528]/80 border border-purple-400/30 rounded-md p-2 text-white font-semibold w-full focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition disabled:opacity-70"
-                    >
-                        {[
-                            'A',
-                            'A#',
-                            'B',
-                            'C',
-                            'C#',
-                            'D',
-                            'D#',
-                            'E',
-                            'F',
-                            'F#',
-                            'G',
-                            'G#',
-                        ].map((note) => (
-                            <option key={note} value={note}>
-                                {note}
-                            </option>
-                        ))}
-                    </select>
+                    />
                 </div>
 
                 {/* Scale Name Selector */}
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                    <label
-                        htmlFor="scale-name"
-                        className="font-bold text-lg text-gray-300"
-                    >
+                <div className="flex items-center gap-2 w-full md:w-auto z-20">
+                    <label className="font-bold text-lg text-gray-300">
                         Scale:
                     </label>
-                    <select
-                        id="scale-name"
+                    <SearchableSelect
+                        options={scaleNames}
                         value={scaleName}
-                        onChange={(e) => setScaleName(e.target.value)}
+                        onChange={setScaleName}
                         disabled={isLoading}
-                        className="bg-[#171528]/80 border border-purple-400/30 rounded-md p-2 text-white font-semibold w-full focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition disabled:opacity-70"
-                    >
-                        <option>Harmonic Minor</option>
-                        <option>Melodic Minor</option>
-                        <option>Major</option>
-                        <option>Natural Minor</option>
-                        <option>Phrygian Dominant</option>
-                        <option>Lydian</option>
-                        <option>Mixolydian</option>
-                        <option>Dorian</option>
-                        <option>Whole Tone</option>
-                    </select>
+                    />
                 </div>
 
                 {/* Generate Button */}
