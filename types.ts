@@ -129,31 +129,31 @@ export interface ScaleNotesData {
 // Updated ScaleDetails to support progressive loading
 export interface ScaleDetails {
     // Generated instantly on the client
-    diagramData?: DiagramData;
-    degreeExplanation?: string; // Now also generated on client
+    diagramData: DiagramData;
+    degreeExplanation: string; // Now also generated on client
     // Fetched asynchronously from AI
-    overview?: {
+    overview: {
         title: string;
         character: string;
         theory: string;
-        usage:string;
+        usage: string;
     };
-    listeningGuide?: Song[];
-    youtubeTutorials?: Tutorial[];
-    creativeApplication?: CreativeVideo[];
-    jamTracks?: JamTrack[];
-    toneAndGear?: {
+    listeningGuide: Song[];
+    youtubeTutorials: Tutorial[];
+    creativeApplication: CreativeVideo[];
+    jamTracks: JamTrack[];
+    toneAndGear: {
         suggestions: ToneSuggestion[];
         famousArtists: string;
     };
-    keyChords?: {
+    keyChords: {
         diatonicQualities: string;
         progressions: ChordProgression[];
     };
-    licks?: Lick[];
-    advancedHarmonization?: HarmonizationExercise[];
-    etudes?: Etude[];
-    modeSpotlight?: ModeInfo;
+    licks: Lick[];
+    advancedHarmonization: HarmonizationExercise[];
+    etudes: Etude[];
+    modeSpotlight: ModeInfo;
 }
 
 export interface FretboardDiagramProps {
@@ -193,16 +193,9 @@ export type FontSizeKey = 'S' | 'M' | 'L';
 
 // Types for the new granular loading state
 export type LoadingStepStatus = 'pending' | 'loading' | 'success' | 'error';
-export type SectionKey = keyof Omit<ScaleDetails, 'diagramData' | 'degreeExplanation'>;
+// Ensure SectionKey includes all keys, including client-generated ones
+export type SectionKey = keyof ScaleDetails;
 
-export interface SectionState {
-    status: LoadingStepStatus;
-    error: string | null;
-    data: any; // The data for this specific section
-}
-
-export interface LoadingState {
-    isActive: boolean;
-    status: 'idle' | 'loading' | 'success' | 'error' | 'interrupted';
-    sections: Record<SectionKey, SectionState>;
-}
+// ARCHITECTURAL REFACTOR: Generic SectionState for full type safety
+export interface SectionState<T> {
+    status: Loading
