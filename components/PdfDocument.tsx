@@ -119,24 +119,28 @@ const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                         <ResourceSection>
                             {scaleDetails.listeningGuide && (
                                 <ResourceList
+                                    title="Listening Guide"
                                     items={scaleDetails.listeningGuide}
                                     icon={<SpotifyIcon />}
                                 />
                             )}
                             {scaleDetails.youtubeTutorials && (
                                 <ResourceList
+                                    title="YouTube Tutorials"
                                     items={scaleDetails.youtubeTutorials}
                                     icon={<YouTubeIcon />}
                                 />
                             )}
                             {scaleDetails.creativeApplication && (
                                 <ResourceList
+                                    title="Creative Application"
                                     items={scaleDetails.creativeApplication}
                                     icon={<LightbulbIcon />}
                                 />
                             )}
                             {scaleDetails.jamTracks && (
                                 <ResourceList
+                                    title="Jam Tracks"
                                     items={scaleDetails.jamTracks}
                                     icon={<JamIcon />}
                                 />

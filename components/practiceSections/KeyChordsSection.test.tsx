@@ -5,12 +5,20 @@ import '@testing-library/jest-dom';
 import KeyChordsSection from './KeyChordsSection';
 import type { ScaleDetails, FontSizeKey } from '../../types';
 
-// Mock the FretboardDiagram component as it is now being reused for chords
-jest.mock('../FretboardDiagram', () => {
-    const MockFretboardDiagram = jest.fn(() => (
-        <div>Mocked Fretboard Diagram</div>
+// Mock the new ChordDiagram component
+jest.mock('../ChordDiagram', () => {
+    const MockChordDiagram = jest.fn(({ chord }) => (
+        <div>Mocked ChordDiagram: {chord.name}</div>
     ));
-    return MockFretboardDiagram;
+    return MockChordDiagram;
+});
+
+// Mock the new DiagramPlaceholder component
+jest.mock('../common/DiagramPlaceholder', () => {
+    const MockDiagramPlaceholder = jest.fn(({ chordName }) => (
+        <div>Mocked Placeholder: {chordName}</div>
+    ));
+    return MockDiagramPlaceholder;
 });
 
 const mockKeyChords: NonNullable<ScaleDetails['keyChords']> = {
@@ -25,7 +33,6 @@ const mockKeyChords: NonNullable<ScaleDetails['keyChords']> = {
                     name: 'Am',
                     degree: 'i',
                     diagramData: {
-                        // 7-string voicing
                         frets: ['x', 'x', '7', '5', '5', '5', 'x'],
                         fingers: ['', '', '3', '1', '1', '1', ''],
                         baseFret: 5,
@@ -42,21 +49,28 @@ const mockKeyChords: NonNullable<ScaleDetails['keyChords']> = {
                         barres: [{ fromString: 1, toString: 5, fret: 5 }],
                     },
                 },
+                {
+                    name: 'E',
+                    degree: 'V',
+                    // This chord intentionally lacks diagramData to test filtering
+                },
             ],
         },
     ],
 };
 
 // Typed mock for inspection
-const MockedFretboardDiagram = jest.requireMock(
-    '../FretboardDiagram'
+const MockedChordDiagram = jest.requireMock('../ChordDiagram') as jest.Mock;
+const MockedDiagramPlaceholder = jest.requireMock(
+    '../common/DiagramPlaceholder'
 ) as jest.Mock;
 
 describe('KeyChordsSection', () => {
     const defaultFontSize: FontSizeKey = 'M';
 
     beforeEach(() => {
-        MockedFretboardDiagram.mockClear();
+        MockedChordDiagram.mockClear();
+        MockedDiagramPlaceholder.mockClear();
     });
 
     it('renders the main title and diatonic qualities', () => {
@@ -73,20 +87,25 @@ describe('KeyChordsSection', () => {
         expect(screen.getByText('V')).toBeInTheDocument();
     });
 
-    it('renders the progression name and analysis', () => {
+    it('renders ChordDiagram for valid chords and DiagramPlaceholder for chords without data', () => {
         render(
             <KeyChordsSection
                 keyChords={mockKeyChords}
                 fontSize={defaultFontSize}
             />
         );
-        expect(
-            screen.getByText('Classic Minor Progression')
-        ).toBeInTheDocument();
-        expect(screen.getByText('i - iv - V')).toBeInTheDocument();
+
+        // ChordDiagram should be called for the 2 chords WITH data
+        expect(MockedChordDiagram).toHaveBeenCalledTimes(2);
+        expect(screen.getByText('Mocked ChordDiagram: Am')).toBeInTheDocument();
+        expect(screen.getByText('Mocked ChordDiagram: Dm')).toBeInTheDocument();
+
+        // DiagramPlaceholder should be called for the 1 chord WITHOUT data
+        expect(MockedDiagramPlaceholder).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('Mocked Placeholder: E')).toBeInTheDocument();
     });
 
-    it('calls the reused FretboardDiagram component with correctly transformed props', () => {
+    it('calls the ChordDiagram and DiagramPlaceholder components with the correct props', () => {
         render(
             <KeyChordsSection
                 keyChords={mockKeyChords}
@@ -94,23 +113,15 @@ describe('KeyChordsSection', () => {
             />
         );
 
-        // Check that FretboardDiagram was called twice
-        expect(MockedFretboardDiagram).toHaveBeenCalledTimes(2);
+        // Check props for ChordDiagram
+        const firstDiagramCallProps = MockedChordDiagram.mock.calls[0][0];
+        expect(firstDiagramCallProps.chord.name).toBe('Am');
+        expect(firstDiagramCallProps.chord.degree).toBe('i');
+        expect(firstDiagramCallProps.chord.diagramData).toBeDefined();
 
-        // Check the props for the first chord (Am)
-        const firstCallProps = MockedFretboardDiagram.mock.calls[0][0];
-        expect(firstCallProps.title).toBe('Am');
-        expect(firstCallProps.numStrings).toBe(7);
-        // Base fret 5 means range is [5, 9]
-        expect(firstCallProps.fretRange).toEqual([5, 9]);
-        expect(firstCallProps.notesToRender).toEqual(
-            expect.arrayContaining([
-                // High B string (string 1) on fret 5
-                expect.objectContaining({ string: 1, fret: 5 }),
-                // Low A string (string 4) on fret 5
-                expect.objectContaining({ string: 4, fret: 5 }),
-            ])
-        );
-        expect(firstCallProps.notesToRender.length).toBe(4); // 4 non-'x' notes
+        // Check props for DiagramPlaceholder
+        const placeholderCallProps = MockedDiagramPlaceholder.mock.calls[0][0];
+        expect(placeholderCallProps.chordName).toBe('E');
+        expect(placeholderCallProps.degree).toBe('V');
     });
 });

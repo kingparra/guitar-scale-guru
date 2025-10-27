@@ -9,6 +9,7 @@ import type {
 import { FONT_SIZES, NUM_FRETS } from '../../constants';
 import { calculatePlayableFretRange } from '../../utils/diagramUtils';
 import DiagramLegend from '../common/DiagramLegend';
+import Card from '../common/Card';
 
 interface DiagramsSectionProps {
     diagramData: ScaleDetails['diagramData'];
@@ -64,7 +65,7 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
             : 'Full Neck Diagram';
 
         return (
-            <>
+            <Card>
                 <DiagramLegend />
                 <FretboardDiagram
                     title={fullNeckTitle}
@@ -100,7 +101,7 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
                         />
                     ))}
                 </div>
-            </>
+            </Card>
         );
     }
 );

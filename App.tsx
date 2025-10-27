@@ -1,6 +1,12 @@
-import React, { useState, useRef } from 'react';
-// FIX: Added import for ScaleDetails
-import type { SongAnalysisResult, FontSizeKey, SectionKey, ScaleDetails } from './types';
+import React, { useState, useRef, useEffect } from 'react';
+import type {
+    SongAnalysisResult,
+    FontSizeKey,
+    SectionKey,
+    ScaleDetails,
+    LoadingState,
+    SectionState,
+} from './types';
 import { COLORS, FONT_SIZES } from './constants';
 
 import { useScaleGenerator } from './hooks/useScaleGenerator';
@@ -12,10 +18,28 @@ import NotationAnalyzer from './components/NotationAnalyzer';
 import ScaleExplorer from './components/ScaleExplorer';
 import PdfDocument from './components/PdfDocument';
 import Footer from './components/common/Footer';
+import ApiKeyManager from './components/ApiKeyManager';
 
 const App: React.FC = () => {
     const [fontSize, setFontSize] = useState<FontSizeKey>('M');
     const pdfContentRef = useRef<HTMLDivElement>(null);
+
+    const [isKeySelected, setIsKeySelected] = useState(false);
+    const [isCheckingKey, setIsCheckingKey] = useState(true);
+
+    // Check for API key on initial load
+    useEffect(() => {
+        const checkApiKey = async () => {
+            setIsCheckingKey(true);
+            if ((window as any).aistudio) {
+                const hasKey =
+                    await (window as any).aistudio.hasSelectedApiKey();
+                setIsKeySelected(hasKey);
+            }
+            setIsCheckingKey(false);
+        };
+        checkApiKey();
+    }, []);
 
     React.useEffect(() => {
         // Set base font size for rem units
@@ -40,33 +64,64 @@ const App: React.FC = () => {
         ...notationAnalyzerProps
     } = useNotationAnalyzer();
 
-    const scaleDetails = React.useMemo(() => {
-        if (loadingState.status === 'idle' || loadingState.status === 'loading') {
-             const partialDetails: any = {};
-             Object.entries(loadingState.sections).forEach(([key, sectionState]) => {
-                // FIX: Cast sectionState to any to access properties due to type inference issue.
-                if((sectionState as any).status === 'success') {
-                    // FIX: Cast sectionState to any to access properties due to type inference issue.
-                    partialDetails[key] = (sectionState as any).data;
-                }
-             });
-             return partialDetails;
+    // Watch for invalid key errors from hooks
+    useEffect(() => {
+        const checkError = (error: string | null) => {
+            if (
+                error &&
+                (error.includes('Requested entity was not found.') ||
+                    error.includes('user has exceeded quota'))
+            ) {
+                setIsKeySelected(false);
+            }
+        };
+
+        checkError(analysisError);
+        for (const sectionState of Object.values(loadingState.sections)) {
+            // FIX: Add type assertion to fix property access on 'unknown' type.
+            checkError((sectionState as SectionState<any>).error);
         }
-        const finalDetails: any = {};
+    }, [analysisError, loadingState.sections]);
+
+    const handleSelectKey = async () => {
+        try {
+            await (window as any).aistudio.openSelectKey();
+            // Assume success after the dialog closes, as per guidelines
+            setIsKeySelected(true);
+        } catch (e) {
+            console.error('Error opening API key selection:', e);
+        }
+    };
+
+    const scaleDetails = React.useMemo(() => {
+        if (loadingState.status === 'idle') {
+            return null;
+        }
+
+        const finalDetails: Partial<ScaleDetails> = {};
+
+        // Add client-generated data first, as it's available immediately
+        if (loadingState.diagramData) {
+            finalDetails.diagramData = loadingState.diagramData;
+        }
+        if (loadingState.degreeExplanation) {
+            finalDetails.degreeExplanation = loadingState.degreeExplanation;
+        }
+
+        // Add successfully fetched async data
         Object.entries(loadingState.sections).forEach(([key, sectionState]) => {
-            // FIX: Cast sectionState to any to access properties due to type inference issue.
-            if ((sectionState as any).data) {
-                // FIX: Cast sectionState to any to access properties due to type inference issue.
-                finalDetails[key] = (sectionState as any).data;
+            const state = sectionState as SectionState<any>;
+            if (state.status === 'success' && state.data) {
+                finalDetails[key as SectionKey] = state.data;
             }
         });
+
         return finalDetails as ScaleDetails;
     }, [loadingState]);
 
-
     const { isSavingPdf, pdfError, generatePdf } = usePdfGenerator(
         pdfContentRef,
-        scaleDetails as ScaleDetails
+        scaleDetails as ScaleDetails | null
     );
 
     const handleGenerate = async (note: string, scale: string) => {
@@ -87,8 +142,11 @@ const App: React.FC = () => {
     const isBusy = loadingState.isActive || isAnalyzing || isSavingPdf;
     const isContentComplete =
         !loadingState.isActive &&
-        // FIX: Cast s to any to access properties due to type inference issue.
-        Object.values(loadingState.sections).some((s) => (s as any).status === 'success');
+        (!!loadingState.diagramData ||
+            // FIX: Add type assertion to fix property access on 'unknown' type.
+            Object.values(loadingState.sections).some(
+                (s) => (s as SectionState<any>).status === 'success'
+            ));
 
     return (
         <div
@@ -97,70 +155,87 @@ const App: React.FC = () => {
                 background: `radial-gradient(ellipse at top, #2F2C58, ${COLORS.bgPrimary})`,
             }}
         >
-            <div className="max-w-7xl mx-auto">
-                <header className="text-center mb-10">
-                    <h1 className="text-5xl md:text-6xl font-bold mb-3 tracking-tight">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 drop-shadow-md">
-                            Guitar Scale Guru
-                        </span>
-                    </h1>
-                    <p
-                        className="text-lg max-w-3xl mx-auto"
-                        style={{ color: COLORS.textSecondary }}
-                    >
-                        Unlock the fretboard with comprehensive, AI-generated
-                        scale materials for the modern 7-string guitarist.
-                    </p>
-                </header>
+            {!isKeySelected && (
+                <ApiKeyManager
+                    onSelectKey={handleSelectKey}
+                    isCheckingKey={isCheckingKey}
+                />
+            )}
 
-                <main className="flex-1 min-w-0">
-                    <ControlPanel
-                        rootNote={rootNote}
-                        scaleName={scaleName}
-                        setRootNote={setRootNote}
-                        setScaleName={setScaleName}
-                        onGenerate={() => handleGenerate(rootNote, scaleName)}
-                        onSavePdf={generatePdf}
-                        isLoading={isBusy}
-                        isSavingPdf={isSavingPdf}
-                        hasContent={isContentComplete}
-                        fontSize={fontSize}
-                        setFontSize={setFontSize}
-                    />
+            {isKeySelected && (
+                <div className="max-w-7xl mx-auto animate-fade-in">
+                    <header className="text-center mb-10">
+                        <h1 className="text-5xl md:text-6xl font-bold mb-3 tracking-tight">
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-500 drop-shadow-md">
+                                Guitar Scale Guru
+                            </span>
+                        </h1>
+                        <p
+                            className="text-lg max-w-3xl mx-auto"
+                            style={{ color: COLORS.textSecondary }}
+                        >
+                            Unlock the fretboard with comprehensive,
+                            AI-generated scale materials for the modern 7-string
+                            guitarist.
+                        </p>
+                    </header>
 
-                    <div className="content-area space-y-8 mt-8">
-                        {analysisError && (
-                            <div className="p-[2px] bg-gradient-to-br from-red-500/80 to-orange-500/80 rounded-2xl shadow-lg">
-                                <div className="bg-[#171528]/80 backdrop-blur-lg p-6 rounded-[14px]">
-                                    <h3 className="font-bold text-lg mb-2 text-center text-red-300">
-                                        Analysis Error
-                                    </h3>
-                                    <pre className="text-left whitespace-pre-wrap bg-black/20 p-3 rounded-md text-sm">
-                                        {analysisError}
-                                    </pre>
-                                </div>
-                            </div>
-                        )}
-
-                        <NotationAnalyzer
-                            onAnalyze={analyze}
-                            isAnalyzing={isAnalyzing}
-                            results={analysisResults}
-                            onGenerateFromAnalysis={handleGenerateFromAnalysis}
-                            {...notationAnalyzerProps}
+                    <main className="flex-1 min-w-0">
+                        <ControlPanel
+                            rootNote={rootNote}
+                            scaleName={scaleName}
+                            setRootNote={setRootNote}
+                            setScaleName={setScaleName}
+                            onGenerate={() =>
+                                handleGenerate(rootNote, scaleName)
+                            }
+                            onSavePdf={generatePdf}
+                            isLoading={isBusy}
+                            isSavingPdf={isSavingPdf}
+                            hasContent={isContentComplete}
+                            fontSize={fontSize}
+                            setFontSize={setFontSize}
                         />
 
-                        <div id="scale-content">
-                            <ScaleExplorer
-                                loadingState={loadingState}
-                                fontSize={fontSize}
-                                onRetrySection={handleRetrySection}
+                        <div className="content-area space-y-8 mt-8">
+                            {analysisError &&
+                                !analysisError.includes(
+                                    'Requested entity was not found.'
+                                ) && (
+                                    <div className="p-[2px] bg-gradient-to-br from-red-500/80 to-orange-500/80 rounded-2xl shadow-lg">
+                                        <div className="bg-[#171528]/80 backdrop-blur-lg p-6 rounded-[14px]">
+                                            <h3 className="font-bold text-lg mb-2 text-center text-red-300">
+                                                Analysis Error
+                                            </h3>
+                                            <pre className="text-left whitespace-pre-wrap bg-black/20 p-3 rounded-md text-sm">
+                                                {analysisError}
+                                            </pre>
+                                        </div>
+                                    </div>
+                                )}
+
+                            <NotationAnalyzer
+                                onAnalyze={analyze}
+                                isAnalyzing={isAnalyzing}
+                                results={analysisResults}
+                                onGenerateFromAnalysis={
+                                    handleGenerateFromAnalysis
+                                }
+                                {...notationAnalyzerProps}
                             />
+
+                            <div id="scale-content">
+                                <ScaleExplorer
+                                    loadingState={loadingState}
+                                    fontSize={fontSize}
+                                    onRetrySection={handleRetrySection}
+                                />
+                            </div>
                         </div>
-                    </div>
-                </main>
-                <Footer />
-            </div>
+                    </main>
+                    <Footer />
+                </div>
+            )}
 
             {isContentComplete && scaleDetails && (
                 <PdfDocument

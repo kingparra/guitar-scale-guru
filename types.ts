@@ -53,6 +53,11 @@ export interface Chord {
     degree: string; // Mandatory for lookup and display
 }
 
+// New type to guarantee the presence of diagram data for rendering
+export type DisplayableChord = Chord & {
+    diagramData: ChordDiagramData;
+};
+
 export interface ChordProgression {
     name: string;
     analysis: string;
@@ -194,8 +199,34 @@ export type FontSizeKey = 'S' | 'M' | 'L';
 // Types for the new granular loading state
 export type LoadingStepStatus = 'pending' | 'loading' | 'success' | 'error';
 // Ensure SectionKey includes all keys, including client-generated ones
-export type SectionKey = keyof ScaleDetails;
+// FIX: This comment appears to conflict with the implementation, where loading states
+// are only tracked for asynchronously fetched sections. Adjusting SectionKey to reflect this.
+export type SectionKey = Exclude<
+    keyof ScaleDetails,
+    'diagramData' | 'degreeExplanation'
+>;
 
 // ARCHITECTURAL REFACTOR: Generic SectionState for full type safety
 export interface SectionState<T> {
-    status: Loading
+    status: LoadingStepStatus;
+    error: string | null;
+    data: T | null;
+}
+
+export type OverallLoadingStatus =
+    | 'idle'
+    | 'loading'
+    | 'success'
+    | 'error'
+    | 'interrupted';
+
+export interface LoadingState {
+    isActive: boolean;
+    status: OverallLoadingStatus;
+    // FIX: Added properties for instantly-available client-generated data
+    diagramData: DiagramData | null;
+    degreeExplanation: string | null;
+    sections: {
+        [K in SectionKey]: SectionState<ScaleDetails[K]>;
+    };
+}

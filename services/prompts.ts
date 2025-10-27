@@ -95,7 +95,7 @@ ${commonPromptHeader(rootNote, scaleName)}
 #### **SECTION TO GENERATE: Key Chords & Progressions ONLY**
 Generate the 'keyChords' object.
 1.  **diatonicQualities**: Single-line reference (e.g., \`i-ii°-III+-iv-V-VI-vii°\`).
-2.  **progressions**: Array of 2 ChordProgression objects. For each chord, provide its roman numeral \`degree\`. **DO NOT** provide \`diagramData\`.
+2.  **progressions**: Array of 2 ChordProgression objects. For each chord, provide its simple triad roman numeral \`degree\` (e.g., 'i', 'V', 'IV'). Do not include extensions like '7' or '9' in the degree string; the client will generate diatonic triad diagrams only. **DO NOT** provide \`diagramData\`.
 `;
 
 export const getLicksPrompt = (rootNote: string, scaleName: string) => `

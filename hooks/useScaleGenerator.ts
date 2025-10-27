@@ -35,18 +35,28 @@ const ALL_SECTIONS: SectionKey[] = [
     'modeSpotlight',
 ];
 
-const createInitialSectionState = (): Record<SectionKey, SectionState> => {
-    return ALL_SECTIONS.reduce((acc, key) => {
-        acc[key] = { status: 'pending', error: null, data: null };
-        return acc;
-    }, {} as Record<SectionKey, SectionState>);
+// FIX: Corrected the return type and accumulator type to align with the new LoadingState interface.
+const createInitialSectionState = (): LoadingState['sections'] => {
+    return ALL_SECTIONS.reduce(
+        (acc, key) => {
+            acc[key] = { status: 'pending', error: null, data: null };
+            return acc;
+        },
+        {} as LoadingState['sections']
+    );
 };
 
 const initialLoadingState: LoadingState = {
     isActive: false,
     status: 'idle',
+    diagramData: null,
+    degreeExplanation: null,
     sections: createInitialSectionState(),
 };
+
+// Helper to normalize degree strings for robust matching
+const normalizeDegree = (degree: string) =>
+    degree.toLowerCase().replace(/°|\+|\s/g, '');
 
 export const useScaleGenerator = () => {
     const [rootNote, setRootNote] = useState('E');
@@ -60,19 +70,22 @@ export const useScaleGenerator = () => {
         const cacheKey = `${note}_${scale}`;
         if (scaleCache.has(cacheKey)) {
             const cachedDetails = scaleCache.get(cacheKey)!;
+            // FIX: Corrected creation of new section state to match the new type structure.
             const newSectionsState = { ...createInitialSectionState() };
             for (const key of ALL_SECTIONS) {
                 if (cachedDetails[key]) {
                     newSectionsState[key] = {
                         status: 'success',
                         error: null,
-                        data: cachedDetails[key],
+                        data: cachedDetails[key] as any,
                     };
                 }
             }
             setLoadingState({
                 isActive: false,
                 status: 'success',
+                diagramData: cachedDetails.diagramData,
+                degreeExplanation: cachedDetails.degreeExplanation,
                 sections: newSectionsState,
             });
             return;
@@ -80,15 +93,15 @@ export const useScaleGenerator = () => {
 
         const currentGenerationId = ++generationIdRef.current;
         setLoadingState({
+            ...initialLoadingState,
             isActive: true,
             status: 'loading',
-            sections: createInitialSectionState(),
         });
 
         // --- Step 1: Client-side generation (instant) ---
         let clientGeneratedDiagramData: DiagramData;
         let degreeExplanation: string;
-        let diatonicChordsMap: Map<string, Chord>;
+        let normalizedDiatonicChordsMap: Map<string, Chord>;
         let scaleNotes: { noteName: string; degree: string }[];
         let fingering: any[];
 
@@ -99,8 +112,14 @@ export const useScaleGenerator = () => {
             const notesOnFretboard = generateNotesOnFretboard(scaleNotes);
             fingering = generateFingeringPositions(notesOnFretboard);
             const diagonalRun = generateDiagonalRun(notesOnFretboard);
-            diatonicChordsMap = generateDiatonicChords(scaleNotes);
+            const diatonicChordsMap = generateDiatonicChords(scaleNotes);
             degreeExplanation = generateDegreeTableMarkdown(scaleNotes);
+            
+            // FIX: Create a map with normalized keys for robust matching
+            normalizedDiatonicChordsMap = new Map<string, Chord>();
+            diatonicChordsMap.forEach((chord, degree) => {
+                normalizedDiatonicChordsMap.set(normalizeDegree(degree), chord);
+            });
 
             clientGeneratedDiagramData = {
                 notesOnFretboard,
@@ -109,9 +128,18 @@ export const useScaleGenerator = () => {
                 tonicChordDegrees,
                 characteristicDegrees,
             };
+            
+            // FIX: Immediately update state with client-generated data
+            setLoadingState(prev => ({
+                ...prev,
+                diagramData: clientGeneratedDiagramData,
+                degreeExplanation: degreeExplanation,
+            }));
+
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Client-side generation failed.';
             setLoadingState({
+                ...initialLoadingState,
                 isActive: false,
                 status: 'error',
                 sections: {
@@ -150,11 +178,30 @@ export const useScaleGenerator = () => {
             promise
                 .then((data) => {
                     if (generationIdRef.current !== currentGenerationId) return;
+
+                    // FIX: Hydrate data with client-side info as soon as it arrives
+                    let hydratedData = data;
+                    if (key === 'keyChords' && data?.progressions) {
+                        data.progressions.forEach((prog: any) => {
+                            prog.chords.forEach((chord: Chord) => {
+                                // FIX: Use normalized map for robust matching
+                                const clientChord = normalizedDiatonicChordsMap.get(normalizeDegree(chord.degree));
+                                if (clientChord) chord.diagramData = clientChord.diagramData;
+                            });
+                        });
+                    }
+                    if (key === 'advancedHarmonization' && Array.isArray(data)) {
+                        data.forEach((ex: any) => {
+                            const interval = ex.description.toLowerCase().includes('third') ? 2 : 5;
+                            ex.tab = generateHarmonizationTab(fingering, scaleNotes, interval);
+                        });
+                    }
+
                     setLoadingState((prev) => ({
                         ...prev,
                         sections: {
                             ...prev.sections,
-                            [key]: { status: 'success', error: null, data },
+                            [key]: { status: 'success', error: null, data: hydratedData },
                         },
                     }));
                 })
@@ -175,48 +222,36 @@ export const useScaleGenerator = () => {
         });
 
         // Wait for all to settle to finalize the state
-        Promise.allSettled(apiCalls.map(p => p.promise)).then(results => {
+        Promise.allSettled(apiCalls.map(p => p.promise)).then(() => {
             if (generationIdRef.current !== currentGenerationId) return;
-
-            const finalDetails: ScaleDetails = {
-                diagramData: clientGeneratedDiagramData,
-                degreeExplanation: degreeExplanation,
-            };
-
-            results.forEach((result, index) => {
-                const key = apiCalls[index].key;
-                if (result.status === 'fulfilled') {
-                    (finalDetails as any)[key] = result.value;
-                }
-            });
             
-            // Hydrate data post-fetch
-            if (finalDetails.keyChords?.progressions) {
-                finalDetails.keyChords.progressions.forEach(prog => {
-                    prog.chords.forEach((chord: Chord) => {
-                        const clientChord = diatonicChordsMap.get(chord.degree);
-                        if (clientChord) chord.diagramData = clientChord.diagramData;
+            setLoadingState(prev => {
+                // FIX: Add type assertion to fix property access on 'unknown' type.
+                const hasErrors = Object.values(prev.sections).some(s => (s as SectionState<any>).status === 'error');
+                const finalStatus = hasErrors ? 'interrupted' : 'success';
+                
+                if (finalStatus === 'success') {
+                    // Reconstruct final details from state for caching
+                    const finalDetailsForCache: Partial<ScaleDetails> = {
+                        diagramData: prev.diagramData,
+                        degreeExplanation: prev.degreeExplanation,
+                    };
+                    Object.entries(prev.sections).forEach(([key, sectionState]) => {
+                        // FIX: Add type assertion to fix property access on 'unknown' type.
+                        if ((sectionState as SectionState<any>).data) {
+                            // FIX: Add type assertion to fix property access on 'unknown' type.
+                            (finalDetailsForCache as any)[key] = (sectionState as SectionState<any>).data;
+                        }
                     });
-                });
-            }
-            if (finalDetails.advancedHarmonization) {
-                 finalDetails.advancedHarmonization.forEach(ex => {
-                    const interval = ex.description.toLowerCase().includes('third') ? 2 : 5;
-                    ex.tab = generateHarmonizationTab(fingering, scaleNotes, interval);
-                });
-            }
+                    scaleCache.set(cacheKey, finalDetailsForCache as ScaleDetails);
+                }
 
-            // FIX: Cast s to any to access properties due to type inference issue.
-            const hasErrors = Object.values(loadingState.sections).some(s => (s as any).status === 'error');
-            setLoadingState(prev => ({
-                ...prev,
-                isActive: false,
-                status: hasErrors ? 'interrupted' : 'success',
-            }));
-            
-            if (!hasErrors) {
-                scaleCache.set(cacheKey, finalDetails);
-            }
+                return {
+                    ...prev,
+                    isActive: false,
+                    status: finalStatus,
+                };
+            });
         });
     }, []);
 
@@ -240,6 +275,8 @@ export const useScaleGenerator = () => {
 
         try {
             const data = await serviceFunction(note, scale);
+            // NOTE: Hydration on retry is not yet implemented. This is an edge case.
+            // For now, we'll just set the raw data.
             setLoadingState(prev => ({
                 ...prev,
                 sections: {

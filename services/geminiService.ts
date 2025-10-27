@@ -25,11 +25,12 @@ import {
     notationAnalysisPrompt,
 } from './prompts';
 
-if (!process.env.API_KEY) {
-    throw new Error('API_KEY environment variable not set');
-}
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+/**
+ * Creates a new GoogleGenAI client instance.
+ * This function is called before every API request to ensure the most
+ * up-to-date API key from the environment is used.
+ */
+const getAiClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const songAnalysisSchema = {
     type: Type.ARRAY,
@@ -55,6 +56,7 @@ export const analyzeMusicNotationImage = async (
     const textPart = { text: notationAnalysisPrompt };
 
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             // FIX: Correct model name for complex tasks
             model: 'gemini-2.5-pro',
@@ -237,6 +239,7 @@ const generateContent = async (
     context: string
 ): Promise<any> => {
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             // FIX: Correct model name for complex tasks
             model: 'gemini-2.5-pro',

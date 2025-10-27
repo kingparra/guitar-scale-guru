@@ -4,9 +4,11 @@ import type {
     FontSizeKey,
     LoadingState,
     SectionKey,
-} from '../../types';
+    SectionState,
+} from '../types';
 import Card from './common/Card';
-import { COLORS } from '../../constants';
+import Section from './common/Section';
+import { COLORS } from '../constants';
 import OverviewSection from './scaleExplorerSections/OverviewSection';
 import DiagramsSection from './scaleExplorerSections/DiagramsSection';
 import ResourceSection from './scaleExplorerSections/ResourceSection';
@@ -19,6 +21,8 @@ import ToneAndGearSection from './practiceSections/ToneAndGearSection';
 import TabbedPracticeItem from './practiceSections/TabbedPracticeItem';
 import ModeSpotlightSection from './practiceSections/ModeSpotlightSection';
 import {
+    BookOpenIcon,
+    DiagramsIcon,
     SpotifyIcon,
     YouTubeIcon,
     LightbulbIcon,
@@ -58,160 +62,175 @@ const ScaleExplorer: React.FC<ScaleExplorerProps> = ({
         return <WelcomeState />;
     }
 
-    const { sections } = loadingState;
+    const { sections, diagramData, degreeExplanation } = loadingState;
     const allSectionData = Object.entries(sections).reduce(
         (acc, [key, value]) => {
-            // FIX: Cast value to any to access properties due to type inference issue.
-            if ((value as any).data) {
-                // FIX: Cast value to any to access properties due to type inference issue.
-                acc[key as SectionKey] = (value as any).data;
+            // FIX: Add type assertion to fix property access on 'unknown' type.
+            if ((value as SectionState<any>).data) {
+                // FIX: Add type assertion to fix property access on 'unknown' type.
+                acc[key as SectionKey] = (value as SectionState<any>).data;
             }
             return acc;
         },
         {} as Partial<ScaleDetails>
     );
 
-    const renderSection = (
+    const renderOrLoad = (
         key: SectionKey,
         title: string,
-        ContentComponent: React.FC<any>
+        Content: React.ReactNode
     ) => {
-        const sectionState = sections[key];
-        if (sectionState.status === 'pending') return null;
-        if (
-            sectionState.status === 'loading' ||
-            sectionState.status === 'error'
-        ) {
+        const state = sections[key];
+        if (state.status === 'pending') return null;
+        if (state.status === 'loading' || state.status === 'error') {
             return (
                 <SectionLoader
                     title={title}
-                    status={sectionState.status}
-                    error={sectionState.error}
+                    status={state.status}
+                    error={state.error}
                     onRetry={() => onRetrySection(key)}
                 />
             );
         }
-        if (sectionState.status === 'success' && sectionState.data) {
-            return <ContentComponent {...sectionState.data} />;
+        if (state.status === 'success' && state.data) {
+            return Content;
         }
         return null;
     };
 
     return (
-        <div className="space-y-12">
-            {/* Diagrams - show instantly from client-side data */}
-            {allSectionData.diagramData && (
-                <section>
-                    <h2 className="text-3xl font-bold mb-4 border-l-4 border-purple-400/50 pl-4 text-gray-100">
-                        Diagrams
-                    </h2>
-                    <DiagramsSection
-                        diagramData={allSectionData.diagramData}
-                        fontSize={fontSize}
-                    />
-                </section>
+        <div className="space-y-8">
+            {renderOrLoad(
+                'overview',
+                'Overview',
+                <Section title="Overview" icon={<BookOpenIcon />}>
+                    {allSectionData.overview && (
+                        <OverviewSection
+                            overview={allSectionData.overview}
+                            degreeExplanation={degreeExplanation || ''}
+                        />
+                    )}
+                </Section>
             )}
 
-            <section>
-                <h2 className="text-3xl font-bold mb-4 border-l-4 border-purple-400/50 pl-4 text-gray-100">
-                    Overview
-                </h2>
-                {renderSection('overview', 'Overview & Theory', (data) => (
-                    <OverviewSection
-                        overview={data}
-                        degreeExplanation={
-                            allSectionData.degreeExplanation || ''
-                        }
+            {diagramData && (
+                <Section title="Fretboard Diagrams" icon={<DiagramsIcon />}>
+                    <DiagramsSection
+                        diagramData={diagramData}
+                        fontSize={fontSize}
                     />
-                ))}
-            </section>
+                </Section>
+            )}
 
-            <section>
-                <h2 className="text-3xl font-bold mb-4 border-l-4 border-purple-400/50 pl-4 text-gray-100">
-                    Resources
-                </h2>
-                <ResourceSection>
-                    {renderSection(
-                        'listeningGuide',
-                        'Listening Guide',
-                        (data) => (
-                            <ResourceList items={data} icon={<SpotifyIcon />} />
-                        )
-                    )}
-                    {renderSection(
-                        'youtubeTutorials',
-                        'YouTube Tutorials',
-                        (data) => (
-                            <ResourceList items={data} icon={<YouTubeIcon />} />
-                        )
-                    )}
-                    {renderSection(
-                        'creativeApplication',
-                        'Creative Application',
-                        (data) => (
-                            <ResourceList
-                                items={data}
-                                icon={<LightbulbIcon />}
-                            />
-                        )
-                    )}
-                    {renderSection('jamTracks', 'Jam Tracks', (data) => (
-                        <ResourceList items={data} icon={<JamIcon />} />
-                    ))}
-                </ResourceSection>
-            </section>
+            <ResourceSection>
+                {renderOrLoad(
+                    'listeningGuide',
+                    'Listening Guide',
+                    allSectionData.listeningGuide && (
+                        <ResourceList
+                            title="Listening Guide"
+                            items={allSectionData.listeningGuide}
+                            icon={<SpotifyIcon />}
+                        />
+                    )
+                )}
+                {renderOrLoad(
+                    'youtubeTutorials',
+                    'YouTube Tutorials',
+                    allSectionData.youtubeTutorials && (
+                        <ResourceList
+                            title="YouTube Tutorials"
+                            items={allSectionData.youtubeTutorials}
+                            icon={<YouTubeIcon />}
+                        />
+                    )
+                )}
+                {renderOrLoad(
+                    'creativeApplication',
+                    'Creative Application',
+                    allSectionData.creativeApplication && (
+                        <ResourceList
+                            title="Creative Application"
+                            items={allSectionData.creativeApplication}
+                            icon={<LightbulbIcon />}
+                        />
+                    )
+                )}
+                {renderOrLoad(
+                    'jamTracks',
+                    'Jam Tracks',
+                    allSectionData.jamTracks && (
+                        <ResourceList
+                            title="Jam Tracks"
+                            items={allSectionData.jamTracks}
+                            icon={<JamIcon />}
+                        />
+                    )
+                )}
+            </ResourceSection>
 
-            <section>
-                <h2 className="text-3xl font-bold mb-4 border-l-4 border-purple-400/50 pl-4 text-gray-100">
-                    Practice Materials
-                </h2>
-                <PracticeSection>
-                    {renderSection(
-                        'toneAndGear',
-                        'Tone & Gear',
-                        (data) => <ToneAndGearSection toneAndGear={data} />
-                    )}
-                    {renderSection(
-                        'keyChords',
-                        'Key Chords & Progressions',
-                        (data) => (
-                            <KeyChordsSection
-                                keyChords={data}
-                                fontSize={fontSize}
-                            />
+            <PracticeSection>
+                {renderOrLoad(
+                    'toneAndGear',
+                    'Tone & Gear',
+                    allSectionData.toneAndGear && (
+                        <ToneAndGearSection
+                            toneAndGear={allSectionData.toneAndGear}
+                        />
+                    )
+                )}
+                {renderOrLoad(
+                    'keyChords',
+                    'Key Chords & Progressions',
+                    allSectionData.keyChords && (
+                        <KeyChordsSection
+                            keyChords={allSectionData.keyChords}
+                            fontSize={fontSize}
+                        />
+                    )
+                )}
+                {renderOrLoad(
+                    'licks',
+                    'Licks',
+                    allSectionData.licks &&
+                        allSectionData.licks.map((item, index) => (
+                            <Card key={`lick-${index}`}>
+                                <TabbedPracticeItem item={item} />
+                            </Card>
+                        ))
+                )}
+                {renderOrLoad(
+                    'advancedHarmonization',
+                    'Advanced Harmonization',
+                    allSectionData.advancedHarmonization &&
+                        allSectionData.advancedHarmonization.map(
+                            (item, index) => (
+                                <Card key={`harm-${index}`}>
+                                    <TabbedPracticeItem item={item} />
+                                </Card>
+                            )
                         )
-                    )}
-                    {(sections.licks as any)?.data &&
-                        (sections.licks as any).data.map(
-                            (item: any, index: number) => (
-                                <Card key={index}>
-                                    <TabbedPracticeItem item={item} />
-                                </Card>
-                            )
-                        )}
-                    {(sections.advancedHarmonization as any)?.data &&
-                        (sections.advancedHarmonization as any).data.map(
-                            (item: any, index: number) => (
-                                <Card key={index}>
-                                    <TabbedPracticeItem item={item} />
-                                </Card>
-                            )
-                        )}
-                    {(sections.etudes as any)?.data &&
-                        (sections.etudes as any).data.map(
-                            (item: any, index: number) => (
-                                <Card key={index}>
-                                    <TabbedPracticeItem item={item} />
-                                </Card>
-                            )
-                        )}
-                    {renderSection(
-                        'modeSpotlight',
-                        'Mode Spotlight',
-                        (data) => <ModeSpotlightSection modeSpotlight={data} />
-                    )}
-                </PracticeSection>
-            </section>
+                )}
+                {renderOrLoad(
+                    'etudes',
+                    'Etudes',
+                    allSectionData.etudes &&
+                        allSectionData.etudes.map((item, index) => (
+                            <Card key={`etude-${index}`}>
+                                <TabbedPracticeItem item={item} />
+                            </Card>
+                        ))
+                )}
+                {renderOrLoad(
+                    'modeSpotlight',
+                    'Mode Spotlight',
+                    allSectionData.modeSpotlight && (
+                        <ModeSpotlightSection
+                            modeSpotlight={allSectionData.modeSpotlight}
+                        />
+                    )
+                )}
+            </PracticeSection>
         </div>
     );
 };

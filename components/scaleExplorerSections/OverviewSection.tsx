@@ -1,6 +1,5 @@
 import React from 'react';
 import type { ScaleDetails } from '../../types';
-import Card from '../common/Card';
 import { COLORS } from '../../constants';
 import { renderMarkdownTable } from '../../utils/markdownUtils';
 
@@ -11,7 +10,7 @@ interface OverviewSectionProps {
 
 const OverviewSection: React.FC<OverviewSectionProps> = React.memo(
     ({ overview, degreeExplanation }) => (
-        <Card>
+        <>
             <h3
                 className="text-2xl font-bold mb-4"
                 style={{ color: COLORS.textHeader }}
@@ -47,7 +46,7 @@ const OverviewSection: React.FC<OverviewSectionProps> = React.memo(
                     {renderMarkdownTable(degreeExplanation)}
                 </div>
             </div>
-        </Card>
+        </>
     )
 );
 
