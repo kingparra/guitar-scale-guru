@@ -229,6 +229,8 @@ const App: React.FC = () => {
                                     loadingState={loadingState}
                                     fontSize={fontSize}
                                     onRetrySection={handleRetrySection}
+                                    rootNote={rootNote}
+                                    scaleName={scaleName}
                                 />
                             </div>
                         </div>
@@ -242,6 +244,8 @@ const App: React.FC = () => {
                     ref={pdfContentRef}
                     scaleDetails={scaleDetails as ScaleDetails}
                     fontSize={fontSize}
+                    rootNote={rootNote}
+                    scaleName={scaleName}
                 />
             )}
         </div>

@@ -14,6 +14,8 @@ import Card from '../common/Card';
 interface DiagramsSectionProps {
     diagramData: ScaleDetails['diagramData'];
     fontSize: FontSizeKey;
+    rootNote: string;
+    scaleName: string;
 }
 
 const prepareNotesForPosition = (
@@ -37,7 +39,7 @@ const prepareNotesForPosition = (
 };
 
 const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
-    ({ diagramData, fontSize }) => {
+    ({ diagramData, fontSize, rootNote, scaleName }) => {
         const fontScaleValue = parseFloat(
             FONT_SIZES[fontSize].replace('rem', '')
         );
@@ -57,15 +59,11 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
             }));
         }, [fingering, notesOnFretboard]);
 
-        const rootNoteName =
-            notesOnFretboard.find((n) => n.degree === 'R')?.noteName ||
-            notesOnFretboard[0]?.noteName;
-        const fullNeckTitle = rootNoteName
-            ? `${rootNoteName} Scale: Full Neck`
-            : 'Full Neck Diagram';
+        const fullNeckTitle = `${rootNote} ${scaleName} - Full Neck`;
+        const runTitle = `${rootNote} ${scaleName} - Ascending Diagonal Run`;
 
         return (
-            <Card>
+            <>
                 <DiagramLegend />
                 <FretboardDiagram
                     title={fullNeckTitle}
@@ -78,7 +76,7 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
 
                 {diagonalRun && diagonalRun.length > 0 && (
                     <FretboardDiagram
-                        title={`Ascending Diagonal Run`}
+                        title={runTitle}
                         notesToRender={notesOnFretboard}
                         tonicChordDegrees={tonicChordDegrees}
                         characteristicDegrees={characteristicDegrees}
@@ -92,7 +90,9 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
                     {positionData.map((pos, index) => (
                         <FretboardDiagram
                             key={`position-${index + 1}`}
-                            title={`Position ${index + 1}`}
+                            title={`${rootNote} ${scaleName} - Position ${
+                                index + 1
+                            }`}
                             notesToRender={pos.notes}
                             tonicChordDegrees={tonicChordDegrees}
                             characteristicDegrees={characteristicDegrees}
@@ -101,7 +101,7 @@ const DiagramsSection: React.FC<DiagramsSectionProps> = React.memo(
                         />
                     ))}
                 </div>
-            </Card>
+            </>
         );
     }
 );

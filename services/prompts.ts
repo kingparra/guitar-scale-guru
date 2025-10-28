@@ -1,13 +1,20 @@
+
+import { SCALE_FORMULAS } from '../constants';
+
+const validScales = Object.keys(SCALE_FORMULAS).join(', ');
+
 export const notationAnalysisPrompt = `
 You are an expert music theorist specializing in Optical Music Recognition (OMR).
 Your task is to analyze the provided image of musical notation and suggest appropriate guitar scales.
 
+**CRITICAL CONSTRAINT:** You MUST choose from the following list of supported scales for your suggestions: ${validScales}.
+
 **Analysis Steps:**
 1.  Examine the key signature, accidentals, chord markings, and common melodic/harmonic patterns in the notation.
 2.  Determine the primary musical key and mode.
-3.  Suggest multiple scales:
-    -   **Primary Match:** The single scale that is the most direct and theoretically sound fit.
-    -   **Creative Alternatives:** 1-2 other scales that would also work but provide a different mood or flavor (e.g., suggesting Harmonic Minor for a piece in A minor).
+3.  Suggest multiple scales from the provided list only:
+    -   **Primary Match:** The single scale from the list that is the most direct and theoretically sound fit.
+    -   **Creative Alternatives:** 1-2 other scales from the list that would also work but provide a different mood or flavor.
 4.  For each suggestion, provide a detailed musical justification explaining *why* it's a good choice based on the visual evidence.
 
 **Output:**

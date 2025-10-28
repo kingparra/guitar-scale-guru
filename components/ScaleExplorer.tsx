@@ -4,7 +4,6 @@ import type {
     FontSizeKey,
     LoadingState,
     SectionKey,
-    SectionState,
 } from '../types';
 import Card from './common/Card';
 import Section from './common/Section';
@@ -34,6 +33,8 @@ interface ScaleExplorerProps {
     loadingState: LoadingState;
     fontSize: FontSizeKey;
     onRetrySection: (sectionKey: SectionKey) => void;
+    rootNote: string;
+    scaleName: string;
 }
 
 const WelcomeState = () => (
@@ -53,35 +54,37 @@ const WelcomeState = () => (
     </Card>
 );
 
+const EmptyContentPlaceholder: React.FC<{ title: string }> = ({ title }) => (
+    <Card>
+        <div className="p-4 text-center text-sm" style={{ color: COLORS.textSecondary }}>
+            No {title.toLowerCase()} were found for this scale.
+        </div>
+    </Card>
+);
+
+
 const ScaleExplorer: React.FC<ScaleExplorerProps> = ({
     loadingState,
     fontSize,
     onRetrySection,
+    rootNote,
+    scaleName,
 }) => {
     if (loadingState.status === 'idle') {
         return <WelcomeState />;
     }
 
     const { sections, diagramData, degreeExplanation } = loadingState;
-    const allSectionData = Object.entries(sections).reduce(
-        (acc, [key, value]) => {
-            // FIX: Add type assertion to fix property access on 'unknown' type.
-            if ((value as SectionState<any>).data) {
-                // FIX: Add type assertion to fix property access on 'unknown' type.
-                acc[key as SectionKey] = (value as SectionState<any>).data;
-            }
-            return acc;
-        },
-        {} as Partial<ScaleDetails>
-    );
 
-    const renderOrLoad = (
+    const renderSection = (
         key: SectionKey,
         title: string,
-        Content: React.ReactNode
+        ContentComponent: (data: any) => React.ReactNode,
+        isList = false
     ) => {
         const state = sections[key];
         if (state.status === 'pending') return null;
+
         if (state.status === 'loading' || state.status === 'error') {
             return (
                 <SectionLoader
@@ -92,25 +95,34 @@ const ScaleExplorer: React.FC<ScaleExplorerProps> = ({
                 />
             );
         }
-        if (state.status === 'success' && state.data) {
-            return Content;
+
+        if (state.status === 'success') {
+            if (isList && (!state.data || (Array.isArray(state.data) && state.data.length === 0))) {
+                 return <EmptyContentPlaceholder title={title} />;
+            }
+            if (state.data) {
+                return ContentComponent(state.data);
+            }
+            // Handle non-list empty data case if necessary, for now it renders nothing
         }
+
         return null;
     };
 
+
     return (
         <div className="space-y-8">
-            {renderOrLoad(
+            {renderSection(
                 'overview',
                 'Overview',
-                <Section title="Overview" icon={<BookOpenIcon />}>
-                    {allSectionData.overview && (
+                (data) => (
+                    <Section title="Overview" icon={<BookOpenIcon />}>
                         <OverviewSection
-                            overview={allSectionData.overview}
+                            overview={data}
                             degreeExplanation={degreeExplanation || ''}
                         />
-                    )}
-                </Section>
+                    </Section>
+                )
             )}
 
             {diagramData && (
@@ -118,117 +130,84 @@ const ScaleExplorer: React.FC<ScaleExplorerProps> = ({
                     <DiagramsSection
                         diagramData={diagramData}
                         fontSize={fontSize}
+                        rootNote={rootNote}
+                        scaleName={scaleName}
                     />
                 </Section>
             )}
 
             <ResourceSection>
-                {renderOrLoad(
+                 {renderSection(
                     'listeningGuide',
                     'Listening Guide',
-                    allSectionData.listeningGuide && (
-                        <ResourceList
-                            title="Listening Guide"
-                            items={allSectionData.listeningGuide}
-                            icon={<SpotifyIcon />}
-                        />
-                    )
+                    (data) => <ResourceList title="Listening Guide" items={data} icon={<SpotifyIcon />} />,
+                    true
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'youtubeTutorials',
                     'YouTube Tutorials',
-                    allSectionData.youtubeTutorials && (
-                        <ResourceList
-                            title="YouTube Tutorials"
-                            items={allSectionData.youtubeTutorials}
-                            icon={<YouTubeIcon />}
-                        />
-                    )
+                    (data) => <ResourceList title="YouTube Tutorials" items={data} icon={<YouTubeIcon />} />,
+                    true
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'creativeApplication',
                     'Creative Application',
-                    allSectionData.creativeApplication && (
-                        <ResourceList
-                            title="Creative Application"
-                            items={allSectionData.creativeApplication}
-                            icon={<LightbulbIcon />}
-                        />
-                    )
+                    (data) => <ResourceList title="Creative Application" items={data} icon={<LightbulbIcon />} />,
+                    true
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'jamTracks',
                     'Jam Tracks',
-                    allSectionData.jamTracks && (
-                        <ResourceList
-                            title="Jam Tracks"
-                            items={allSectionData.jamTracks}
-                            icon={<JamIcon />}
-                        />
-                    )
+                    (data) => <ResourceList title="Jam Tracks" items={data} icon={<JamIcon />} />,
+                    true
                 )}
             </ResourceSection>
 
             <PracticeSection>
-                {renderOrLoad(
+                 {renderSection(
                     'toneAndGear',
                     'Tone & Gear',
-                    allSectionData.toneAndGear && (
-                        <ToneAndGearSection
-                            toneAndGear={allSectionData.toneAndGear}
-                        />
-                    )
+                    (data) => <ToneAndGearSection toneAndGear={data} />
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'keyChords',
                     'Key Chords & Progressions',
-                    allSectionData.keyChords && (
-                        <KeyChordsSection
-                            keyChords={allSectionData.keyChords}
-                            fontSize={fontSize}
-                        />
-                    )
+                    (data) => <KeyChordsSection keyChords={data} fontSize={fontSize} />
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'licks',
                     'Licks',
-                    allSectionData.licks &&
-                        allSectionData.licks.map((item, index) => (
-                            <Card key={`lick-${index}`}>
-                                <TabbedPracticeItem item={item} />
-                            </Card>
-                        ))
+                    (data) => data.map((item: any, index: number) => (
+                        <Card key={`lick-${index}`}>
+                            <TabbedPracticeItem item={item} />
+                        </Card>
+                    )),
+                    true
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'advancedHarmonization',
                     'Advanced Harmonization',
-                    allSectionData.advancedHarmonization &&
-                        allSectionData.advancedHarmonization.map(
-                            (item, index) => (
-                                <Card key={`harm-${index}`}>
-                                    <TabbedPracticeItem item={item} />
-                                </Card>
-                            )
-                        )
+                    (data) => data.map((item: any, index: number) => (
+                        <Card key={`harm-${index}`}>
+                            <TabbedPracticeItem item={item} />
+                        </Card>
+                    )),
+                    true
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'etudes',
                     'Etudes',
-                    allSectionData.etudes &&
-                        allSectionData.etudes.map((item, index) => (
-                            <Card key={`etude-${index}`}>
-                                <TabbedPracticeItem item={item} />
-                            </Card>
-                        ))
+                    (data) => data.map((item: any, index: number) => (
+                        <Card key={`etude-${index}`}>
+                            <TabbedPracticeItem item={item} />
+                        </Card>
+                    )),
+                    true
                 )}
-                {renderOrLoad(
+                 {renderSection(
                     'modeSpotlight',
                     'Mode Spotlight',
-                    allSectionData.modeSpotlight && (
-                        <ModeSpotlightSection
-                            modeSpotlight={allSectionData.modeSpotlight}
-                        />
-                    )
+                    (data) => <ModeSpotlightSection modeSpotlight={data} />
                 )}
             </PracticeSection>
         </div>

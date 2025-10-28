@@ -28,22 +28,7 @@ export const NOTE_MAP = ALL_NOTES.reduce(
 // New: Formulas for client-side scale generation
 // [steps from previous note, name of degree]
 export const SCALE_FORMULAS: Record<string, [number, string][]> = {
-    'Harmonic Minor': [
-        [2, '2'],
-        [1, 'b3'],
-        [2, '4'],
-        [1, '5'],
-        [3, 'b6'],
-        [1, '7'],
-    ],
-    'Melodic Minor': [
-        [2, '2'],
-        [1, 'b3'],
-        [2, '4'],
-        [2, '5'],
-        [2, '6'],
-        [2, '7'],
-    ],
+    // --- Core Scales ---
     Major: [
         [2, '2'],
         [2, '3'],
@@ -60,10 +45,55 @@ export const SCALE_FORMULAS: Record<string, [number, string][]> = {
         [1, 'b6'],
         [2, 'b7'],
     ],
-    'Phrygian Dominant': [
+    'Harmonic Minor': [
+        [2, '2'],
+        [1, 'b3'],
+        [2, '4'],
+        [1, '5'],
+        [3, 'b6'],
+        [1, '7'],
+    ],
+    'Melodic Minor': [
+        [2, '2'],
+        [1, 'b3'],
+        [2, '4'],
+        [2, '5'],
+        [2, '6'],
+        [2, '7'],
+    ],
+    // --- Pentatonics & Blues ---
+    'Major Pentatonic': [
+        [2, '2'],
+        [2, '3'],
+        [3, '5'],
+        [2, '6'],
+    ],
+    'Minor Pentatonic': [
+        [3, 'b3'],
+        [2, '4'],
+        [2, '5'],
+        [3, 'b7'],
+    ],
+    'Blues Scale': [
+        [3, 'b3'],
+        [2, '4'],
+        [1, 'b5'],
+        [1, '5'],
+        [3, 'b7'],
+    ],
+    // --- Modes of the Major Scale ---
+    Dorian: [
+        [2, '2'],
+        [1, 'b3'],
+        [2, '4'],
+        [2, '5'],
+        [2, '6'],
+        [1, 'b7'],
+    ],
+    Phrygian: [
         [1, 'b2'],
-        [3, '3'],
-        [1, '4'],
+        [2, 'b3'],
+        [2, '4'],
         [2, '5'],
         [1, 'b6'],
         [2, 'b7'],
@@ -84,20 +114,79 @@ export const SCALE_FORMULAS: Record<string, [number, string][]> = {
         [2, '6'],
         [1, 'b7'],
     ],
-    Dorian: [
-        [2, '2'],
-        [1, 'b3'],
+    Locrian: [
+        [1, 'b2'],
+        [2, 'b3'],
         [2, '4'],
-        [2, '5'],
-        [2, '6'],
-        [1, 'b7'],
+        [1, 'b5'],
+        [2, 'b6'],
+        [2, 'b7'],
     ],
+    // --- Symmetric Scales ---
     'Whole Tone': [
         [2, '2'],
         [2, '3'],
         [2, '#4'],
         [2, '#5'],
         [2, '#6'],
+    ],
+    'Diminished (WH)': [
+        [2, '2'],
+        [1, 'b3'],
+        [2, '4'],
+        [1, 'b5'],
+        [2, 'b6'],
+        [1, '6'],
+        [2, '7'],
+    ],
+    'Diminished (HW)': [
+        [1, 'b2'],
+        [2, 'b3'],
+        [1, '3'],
+        [2, '#4'],
+        [1, '5'],
+        [2, '6'],
+        [1, 'b7'],
+    ],
+    'Augmented Scale': [
+        [3, 'b3'],
+        [1, '3'],
+        [3, '5'],
+        [1, '#5'],
+        [3, '7'],
+    ],
+    // --- Exotic & Other Scales ---
+    'Phrygian Dominant': [
+        [1, 'b2'],
+        [3, '3'],
+        [1, '4'],
+        [2, '5'],
+        [1, 'b6'],
+        [2, 'b7'],
+    ],
+    'Double Harmonic Major': [
+        [1, 'b2'],
+        [3, '3'],
+        [1, '4'],
+        [2, '5'],
+        [1, 'b6'],
+        [3, '7'],
+    ],
+    'Hungarian Minor': [
+        [2, '2'],
+        [1, 'b3'],
+        [3, '#4'],
+        [1, '5'],
+        [1, 'b6'],
+        [3, '7'],
+    ],
+    'Neapolitan Minor': [
+        [1, 'b2'],
+        [2, 'b3'],
+        [2, '4'],
+        [2, '5'],
+        [1, 'b6'],
+        [3, '7'],
     ],
 };
 

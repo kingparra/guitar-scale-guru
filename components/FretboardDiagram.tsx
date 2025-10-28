@@ -1,21 +1,84 @@
 import React, { useMemo } from 'react';
 import type { FretboardDiagramProps } from '../types';
-import { FRET_MARKERS, COLORS } from '../constants';
+import { FRET_MARKERS, COLORS, TUNING } from '../constants';
 import { useFretboardLayout } from '../hooks/useFretboardLayout';
 import FretboardNote from './FretboardNote';
 import DiagramWrapper from './common/DiagramWrapper';
 
 // SVG Sub-components for better organization
+const SvgStringLabels: React.FC<{
+    numStrings: number;
+    getY: (s: number) => number;
+    fontScale: number;
+}> = React.memo(({ numStrings, getY, fontScale }) => (
+    <g className="string-labels">
+        {Array.from({ length: numStrings }).map((_, i) => (
+            <text
+                key={`label-${i}`}
+                x={20} // Centered in the 40px label area
+                y={getY(i)}
+                dy="0.35em" // Vertical alignment trick
+                fontSize={16 * fontScale}
+                fill={COLORS.textSecondary}
+                textAnchor="middle"
+                fontWeight="bold"
+            >
+                {TUNING[i]}
+            </text>
+        ))}
+    </g>
+));
+
+const SvgNutSymbols: React.FC<{
+    openStrings?: number[];
+    mutedStrings?: number[];
+    getY: (s: number) => number;
+    fontScale: number;
+    nutX: number;
+}> = React.memo(({ openStrings, mutedStrings, getY, fontScale, nutX }) => (
+    <g className="nut-symbols">
+        {openStrings?.map((s) => (
+            <text
+                key={`open-${s}`}
+                x={nutX}
+                y={getY(s)}
+                dy="0.35em"
+                fontSize={22 * fontScale}
+                fill={COLORS.textPrimary}
+                textAnchor="middle"
+                fontWeight="bold"
+            >
+                ○
+            </text>
+        ))}
+        {mutedStrings?.map((s) => (
+            <text
+                key={`muted-${s}`}
+                x={nutX}
+                y={getY(s)}
+                dy="0.35em"
+                fontSize={24 * fontScale}
+                fill={COLORS.textSecondary}
+                textAnchor="middle"
+                fontWeight="bold"
+            >
+                ×
+            </text>
+        ))}
+    </g>
+));
+
 const SvgStrings: React.FC<{
     count: number;
     getY: (s: number) => number;
     width: number;
-}> = React.memo(({ count, getY, width }) => (
+    xOffset: number;
+}> = React.memo(({ count, getY, width, xOffset }) => (
     <g className="strings">
         {Array.from({ length: count }).map((_, i) => (
             <line
                 key={`string-${i}`}
-                x1={0}
+                x1={xOffset}
                 y1={getY(i)}
                 x2={width}
                 y2={getY(i)}
@@ -48,7 +111,7 @@ const SvgFrets: React.FC<{
             {frets.map((fret) => {
                 const isNut = fret === 0 && hasOpenColumn;
                 const x = isNut
-                    ? getX(0) + fretWidth / 2
+                    ? getX(0) - fretWidth / 2
                     : getX(fret) - fretWidth / 2;
 
                 if (!hasOpenColumn && fret === startFret) {
@@ -113,7 +176,7 @@ const SvgFretMarkers: React.FC<{
                     textAnchor="middle"
                     fontWeight="bold"
                 >
-                    {fret === 0 && hasOpenColumn ? 'OPEN' : fret}
+                    {fret === 0 && hasOpenColumn ? '' : fret}
                 </text>
             ))}
             {FRET_MARKERS.map((marker) => {
@@ -201,6 +264,8 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({
     fretRange,
     diagonalRun,
     barres,
+    openStrings,
+    mutedStrings,
     fontScale = 1.0,
     numStrings = 7,
 }) => {
@@ -215,6 +280,8 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({
         fretsToRender,
         getX,
         getY,
+        LABEL_WIDTH,
+        NUT_WIDTH,
     } = layout;
 
     const runNotesLookup = useMemo(() => {
@@ -241,10 +308,23 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({
             >
                 <rect width="100%" height="100%" fill={COLORS.bgPrimary} />
 
+                <SvgStringLabels
+                    numStrings={numStrings}
+                    getY={getY}
+                    fontScale={fontScale}
+                />
+                <SvgNutSymbols
+                    openStrings={openStrings}
+                    mutedStrings={mutedStrings}
+                    getY={getY}
+                    fontScale={fontScale}
+                    nutX={LABEL_WIDTH + NUT_WIDTH / 2}
+                />
                 <SvgStrings
                     count={numStrings}
                     getY={getY}
                     width={diagramWidth}
+                    xOffset={LABEL_WIDTH + NUT_WIDTH}
                 />
                 <SvgFrets
                     numStrings={numStrings}
@@ -280,6 +360,7 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({
                 <g className="notes">
                     {layout.notesToRender.map((note, index) => {
                         const { string, fret } = note;
+                        if (fret === 0) return null; // Open strings are handled by SvgNutSymbols now
                         const noteKey = `${string}_${fret}`;
                         const sequenceNumber = runSequenceLookup.get(noteKey);
                         return (
@@ -299,6 +380,7 @@ const FretboardDiagram: React.FC<FretboardDiagramProps> = ({
                                 isInRun={runNotesLookup?.has(noteKey)}
                                 runNotesLookup={runNotesLookup}
                                 sequenceNumber={sequenceNumber}
+                                finger={note.finger}
                             />
                         );
                     })}

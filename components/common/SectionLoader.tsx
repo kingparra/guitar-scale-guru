@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Card from './Card';
-import { COLORS } from '../../constants';
+
+// Array of diagnostic messages to cycle through
+const LOADING_MESSAGES = [
+    'Contacting Gemini Pro...',
+    'Analyzing musical context...',
+    'Crafting harmonic insights...',
+    'Generating practice materials...',
+    'Composing challenging etudes...',
+    'Finding relevant resources...',
+    'Polishing tablature...',
+    'Almost there...',
+];
 
 interface SectionLoaderProps {
     title: string;
@@ -16,14 +27,27 @@ const SectionLoader: React.FC<SectionLoaderProps> = ({
     onRetry,
 }) => {
     const [elapsedTime, setElapsedTime] = useState(0);
+    const [messageIndex, setMessageIndex] = useState(0);
 
     useEffect(() => {
         if (status === 'loading') {
             setElapsedTime(0); // Reset timer on new load
+            setMessageIndex(0); // Reset message index
+
             const timer = setInterval(() => {
                 setElapsedTime((prev) => prev + 0.1);
             }, 100);
-            return () => clearInterval(timer);
+
+            const messageTimer = setInterval(() => {
+                setMessageIndex(
+                    (prevIndex) => (prevIndex + 1) % LOADING_MESSAGES.length
+                );
+            }, 2000); // Change message every 2 seconds
+
+            return () => {
+                clearInterval(timer);
+                clearInterval(messageTimer);
+            };
         }
     }, [status]);
 
@@ -52,7 +76,11 @@ const SectionLoader: React.FC<SectionLoaderProps> = ({
                     ) : (
                         <div className="text-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto"></div>
-                            <p className="mt-2 text-sm text-cyan-400/80 font-mono">
+                            {/* New diagnostic message */}
+                            <p className="mt-3 text-sm text-gray-400 transition-opacity duration-500 h-5">
+                                {LOADING_MESSAGES[messageIndex]}
+                            </p>
+                            <p className="mt-1 text-xs text-cyan-400/80 font-mono">
                                 {elapsedTime.toFixed(1)}s
                             </p>
                         </div>

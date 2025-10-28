@@ -7,6 +7,7 @@ import type {
     LoadingState,
     SectionKey,
     SectionState,
+    ChordProgression,
 } from '../types';
 import {
     generateScaleNotesFromFormula,
@@ -111,7 +112,7 @@ export const useScaleGenerator = () => {
             const { tonicChordDegrees, characteristicDegrees } = getDiagramMetadataFromScaleNotes(scaleNotes);
             const notesOnFretboard = generateNotesOnFretboard(scaleNotes);
             fingering = generateFingeringPositions(notesOnFretboard);
-            const diagonalRun = generateDiagonalRun(notesOnFretboard);
+            const diagonalRun = generateDiagonalRun(notesOnFretboard, fingering);
             const diatonicChordsMap = generateDiatonicChords(scaleNotes);
             degreeExplanation = generateDegreeTableMarkdown(scaleNotes);
             
@@ -182,11 +183,15 @@ export const useScaleGenerator = () => {
                     // FIX: Hydrate data with client-side info as soon as it arrives
                     let hydratedData = data;
                     if (key === 'keyChords' && data?.progressions) {
-                        data.progressions.forEach((prog: any) => {
+                        data.progressions.forEach((prog: ChordProgression) => {
                             prog.chords.forEach((chord: Chord) => {
                                 // FIX: Use normalized map for robust matching
                                 const clientChord = normalizedDiatonicChordsMap.get(normalizeDegree(chord.degree));
-                                if (clientChord) chord.diagramData = clientChord.diagramData;
+                                if (clientChord) {
+                                    chord.voicings = clientChord.voicings;
+                                } else {
+                                    chord.voicings = [];
+                                }
                             });
                         });
                     }

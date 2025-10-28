@@ -2,6 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import {
     generateScaleNotesFromFormula,
     generateDiatonicChords,
+    CHORD_VOICING_LIBRARY,
 } from './guitarUtils';
 
 describe('guitarUtils', () => {
@@ -36,18 +37,33 @@ describe('guitarUtils', () => {
         });
     });
 
+    describe('CHORD_VOICING_LIBRARY Playability', () => {
+        it('should ensure all defined voicings use four or fewer unique fingers', () => {
+            CHORD_VOICING_LIBRARY.forEach((voicing) => {
+                const fingers = new Set(voicing.notes.map((note) => note.finger));
+                const fingerCount = fingers.size;
+                // Assert that the number of unique fingers is 4 or less.
+                expect(fingerCount).toBeLessThanOrEqual(4);
+            });
+        });
+    });
+
     describe('generateDiatonicChords', () => {
         it('should generate the correct diatonic chords for C Major', () => {
             const scaleNotes = generateScaleNotesFromFormula('C', 'Major');
             const chords = generateDiatonicChords(scaleNotes!);
 
-            expect(chords.get('I')?.name).toBe('C');
-            expect(chords.get('ii')?.name).toBe('Dm');
-            expect(chords.get('iii')?.name).toBe('Em');
-            expect(chords.get('IV')?.name).toBe('F');
-            expect(chords.get('V')?.name).toBe('G');
-            expect(chords.get('vi')?.name).toBe('Am');
+            expect(chords.get('I')?.name).toBe('Cmaj');
+            expect(chords.get('ii')?.name).toBe('Dmin');
+            expect(chords.get('iii')?.name).toBe('Emin');
+            expect(chords.get('IV')?.name).toBe('Fmaj');
+            expect(chords.get('V')?.name).toBe('Gmaj');
+            expect(chords.get('vi')?.name).toBe('Amin');
             expect(chords.get('vii°')?.name).toBe('Bdim');
+
+            // Check that voicings have been found
+            expect(chords.get('I')?.voicings.length).toBeGreaterThan(0);
+            expect(chords.get('ii')?.voicings.length).toBeGreaterThan(0);
         });
 
         it('should generate the correct diatonic chords for A Natural Minor', () => {
@@ -57,13 +73,13 @@ describe('guitarUtils', () => {
             );
             const chords = generateDiatonicChords(scaleNotes!);
 
-            expect(chords.get('i')?.name).toBe('Am');
+            expect(chords.get('i')?.name).toBe('Amin');
             expect(chords.get('ii°')?.name).toBe('Bdim');
-            expect(chords.get('III')?.name).toBe('C');
-            expect(chords.get('iv')?.name).toBe('Dm');
-            expect(chords.get('v')?.name).toBe('Em');
-            expect(chords.get('VI')?.name).toBe('F');
-            expect(chords.get('VII')?.name).toBe('G');
+            expect(chords.get('III')?.name).toBe('Cmaj');
+            expect(chords.get('iv')?.name).toBe('Dmin');
+            expect(chords.get('v')?.name).toBe('Emin');
+            expect(chords.get('VI')?.name).toBe('Fmaj');
+            expect(chords.get('VII')?.name).toBe('Gmaj');
         });
     });
 });

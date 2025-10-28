@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
-import type { ScaleDetails, FontSizeKey } from '../types';
-import { COLORS } from '../constants';
+import type { ScaleDetails, FontSizeKey } from '../../types';
+import { COLORS } from '../../constants';
 
 // Import the same section components used by the main UI
 import OverviewSection from './scaleExplorerSections/OverviewSection';
@@ -10,7 +10,8 @@ import PracticeSection from './scaleExplorerSections/PracticeSection';
 
 // Import individual content components for correct rendering
 import ResourceList from './scaleExplorerSections/ResourceList';
-import KeyChordsSection from './practiceSections/KeyChordsSection';
+import DiatonicChordsDisplay from './practiceSections/DiatonicChordsDisplay';
+import ChordProgressionCard from './practiceSections/ChordProgressionCard';
 import ToneAndGearSection from './practiceSections/ToneAndGearSection';
 import TabbedPracticeItem from './practiceSections/TabbedPracticeItem';
 import ModeSpotlightSection from './practiceSections/ModeSpotlightSection';
@@ -25,6 +26,8 @@ import {
 interface PdfDocumentProps {
     scaleDetails: ScaleDetails;
     fontSize: FontSizeKey;
+    rootNote: string;
+    scaleName: string;
 }
 
 /**
@@ -32,7 +35,7 @@ interface PdfDocumentProps {
  * It builds a static, print-optimized layout of the scale materials for reliable PDF capture.
  */
 const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
-    ({ scaleDetails, fontSize }, ref) => {
+    ({ scaleDetails, fontSize, rootNote, scaleName }, ref) => {
         // These checks are critical because this component will only be rendered
         // when isContentComplete is true, so we can assume these properties exist.
         if (!scaleDetails.overview || !scaleDetails.diagramData) {
@@ -112,6 +115,8 @@ const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                         <DiagramsSection
                             diagramData={scaleDetails.diagramData}
                             fontSize={fontSize}
+                            rootNote={rootNote}
+                            scaleName={scaleName}
                         />
                     </section>
                     <section>
@@ -156,10 +161,22 @@ const PdfDocument = forwardRef<HTMLDivElement, PdfDocumentProps>(
                                 />
                             )}
                             {scaleDetails.keyChords && (
-                                <KeyChordsSection
-                                    keyChords={scaleDetails.keyChords}
-                                    fontSize={fontSize}
-                                />
+                                <>
+                                    <DiatonicChordsDisplay
+                                        diatonicQualities={
+                                            scaleDetails.keyChords
+                                                .diatonicQualities
+                                        }
+                                    />
+                                    {scaleDetails.keyChords.progressions.map(
+                                        (p, index) => (
+                                            <ChordProgressionCard
+                                                key={`pdf-prog-${index}`}
+                                                progression={p}
+                                            />
+                                        )
+                                    )}
+                                </>
                             )}
                             {scaleDetails.licks?.map((item, index) => (
                                 <Card key={`lick-${index}`}>

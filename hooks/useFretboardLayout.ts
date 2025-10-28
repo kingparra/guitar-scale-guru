@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import type { FretboardDiagramProps, DiagramNote } from '../types';
 
+const LABEL_WIDTH = 40; // Space for string tuning labels
+const NUT_WIDTH = 30; // Space for open/muted string symbols
+
 /**
  * A custom hook to encapsulate all complex layout and coordinate calculations
  * for the FretboardDiagram component. Its sole responsibility is to translate
@@ -25,17 +28,25 @@ export const useFretboardLayout = (
     // For position diagrams, add a little extra width for the start fret border.
     const diagramWidth =
         (hasOpenColumn ? displayedFretCount : displayedFretCount + 1) *
-        fretWidth;
+            fretWidth +
+        LABEL_WIDTH +
+        NUT_WIDTH;
     const diagramHeight = (numStrings - 1) * fretHeight + 120; // 60px padding top and bottom
 
     // Memoize coordinate calculation functions for performance
     const getX = useMemo(
         () => (fret: number) => {
-            if (hasOpenColumn) {
-                return (fret + 0.5) * fretWidth;
+            let base_x;
+            if (fret === 0) {
+                // Open string notes align with the nut line
+                base_x = fretWidth * 0.5;
+            } else if (hasOpenColumn) {
+                base_x = (fret + 0.5) * fretWidth;
+            } else {
+                // For position view, we shift the coordinates to start near the edge.
+                base_x = (fret - startFret + 1) * fretWidth;
             }
-            // For position view, we shift the coordinates to start near the edge.
-            return (fret - startFret + 1) * fretWidth;
+            return base_x + LABEL_WIDTH + NUT_WIDTH;
         },
         [hasOpenColumn, startFret, fretWidth]
     );
@@ -72,5 +83,7 @@ export const useFretboardLayout = (
         notesToRender: finalNotesToRender,
         getX,
         getY,
+        LABEL_WIDTH,
+        NUT_WIDTH,
     };
 };

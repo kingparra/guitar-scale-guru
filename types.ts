@@ -47,15 +47,24 @@ export interface ChordDiagramData {
     barres: { fromString: number; toString: number; fret: number }[];
 }
 
-export interface Chord {
-    name: string;
-    diagramData?: ChordDiagramData; // Optional: will be generated client-side
-    degree: string; // Mandatory for lookup and display
+// ARCHITECTURAL REFACTOR: Chord and Voicing types for new data-driven system
+export interface Voicing {
+    name: string; // e.g., "Open Position", "A-Shape Barre @ 3rd fret"
+    notes: DiagramNote[];
+    barres?: ChordDiagramData['barres'];
+    openStrings?: number[];
+    mutedStrings?: number[];
 }
 
-// New type to guarantee the presence of diagram data for rendering
+export interface Chord {
+    name: string;
+    degree: string;
+    voicings: Voicing[];
+}
+
+// This type is no longer needed with the new Voicing structure
 export type DisplayableChord = Chord & {
-    diagramData: ChordDiagramData;
+    notesToRender: DiagramNote[];
 };
 
 export interface ChordProgression {
@@ -169,6 +178,8 @@ export interface FretboardDiagramProps {
     fretRange: [number, number];
     diagonalRun?: PathDiagramNote[];
     barres?: ChordDiagramData['barres'];
+    openStrings?: number[];
+    mutedStrings?: number[];
     fontScale: number;
     numStrings?: number;
 }
